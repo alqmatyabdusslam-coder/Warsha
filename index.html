@@ -82,30 +82,37 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
 .car .date{font-size:12px;color:var(--muted);margin-top:8px}
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 .banner{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.names{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.names button{font:inherit;font-size:19px;font-weight:700;padding:18px 10px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--text);cursor:pointer}
+.names button:active{background:var(--accent);color:var(--accent-text)}
+.who{font-size:13px;color:var(--muted);margin-top:2px}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <h1>🔧 سجل ورشة WRSHA</h1>
-    <button class="btn ghost hidden" id="logout" type="button">تسجيل الخروج</button>
+    <div><h1>🔧 سجل ورشة WRSHA</h1><div class="who hidden" id="who"></div></div>
+    <button class="btn ghost hidden" id="switchUser" type="button">تبديل</button>
   </div>
 
   <div id="banner" class="banner hidden"></div>
 
-  <!-- تسجيل الدخول -->
-  <div class="card hidden" id="loginCard">
-    <div class="field">
-      <label for="email">البريد الإلكتروني</label>
-      <input id="email" class="ltr" type="email" autocomplete="username" placeholder="name@example.com">
+  <!-- اختيار الاسم -->
+  <div class="card hidden" id="pickCard">
+    <label>اختر اسمك للدخول</label>
+    <div class="names" id="names"></div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn ghost" id="adminToggle" type="button">🔑 دخول المدير</button>
     </div>
-    <div class="field">
-      <label for="password">كلمة المرور</label>
-      <input id="password" class="ltr" type="password" autocomplete="current-password">
+    <div id="adminForm" class="hidden" style="margin-top:14px">
+      <div class="field"><label for="aEmail">البريد الإلكتروني</label>
+        <input id="aEmail" class="ltr" type="email" autocomplete="username"></div>
+      <div class="field"><label for="aPass">كلمة المرور</label>
+        <input id="aPass" class="ltr" type="password" autocomplete="current-password"></div>
+      <button class="btn" id="aLogin" type="button">دخول</button>
+      <div class="msg" id="aMsg"></div>
     </div>
-    <button class="btn" id="login" type="button">تسجيل الدخول</button>
-    <div class="msg" id="loginMsg"></div>
   </div>
 
   <!-- التطبيق -->
@@ -152,14 +159,14 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   // ====== الإعدادات: ضع بياناتك هنا ======
   const SUPABASE_URL = 'https://vtrdmjidwhzurgtndnjv.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmRtamlkd2h6dXJndG5kbmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzOTIxNjUsImV4cCI6MjEwODk2ODE2NX0.NRLbGHxuxRJG_0YfgfATzYcC5-ZnkDIIm8PZeNgHyh4';
+  const WORKERS = ['عامل 1', 'عامل 2', 'عامل 3']; // غيّر الأسماء هنا
   const COUNTRY_CODE = '218'; // رمز الدولة لروابط واتساب (ليبيا 218)
   // ========================================
 
   const STATUSES = ['قيد العمل', 'جاهزة', 'تم التسليم'];
   const $ = id => document.getElementById(id);
   const el = {
-    banner:$('banner'), loginCard:$('loginCard'), app:$('app'), logout:$('logout'),
-    email:$('email'), password:$('password'), login:$('login'), loginMsg:$('loginMsg'),
+    banner:$('banner'), app:$('app'), pickCard:$('pickCard'), names:$('names'), who:$('who'), switchUser:$('switchUser'),
     carNumber:$('carNumber'), model:$('model'), phone:$('phone'), issue:$('issue'),
     save:$('save'), msg:$('msg'), q:$('q'), list:$('list'), filters:$('filters')
   };
@@ -195,38 +202,6 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   }
   function telLink(phone){ return 'tel:' + phone.replace(/[^\d+]/g, ''); }
 
-  // ---------- المصادقة ----------
-  async function onSession(session){
-    const signedIn = !!session;
-    el.loginCard.classList.toggle('hidden', signedIn);
-    el.app.classList.toggle('hidden', !signedIn);
-    el.logout.classList.toggle('hidden', !signedIn);
-    if(signedIn){
-      await fetchCars();
-      subscribe();
-    } else {
-      allCars = [];
-      if(channel){ db.removeChannel(channel); channel = null; }
-    }
-  }
-
-  el.login.addEventListener('click', async () => {
-    const email = el.email.value.trim(), password = el.password.value;
-    if(!email || !password){ setMsg(el.loginMsg, 'أدخل البريد وكلمة المرور', 'err'); return; }
-    el.login.disabled = true;
-    setMsg(el.loginMsg, 'جارٍ تسجيل الدخول…');
-    const { error } = await db.auth.signInWithPassword({ email, password });
-    el.login.disabled = false;
-    if(error){ setMsg(el.loginMsg, 'البريد أو كلمة المرور غير صحيحة', 'err'); return; }
-    el.password.value = '';
-    setMsg(el.loginMsg, '');
-  });
-  el.password.addEventListener('keydown', e => { if(e.key === 'Enter') el.login.click(); });
-  el.logout.addEventListener('click', () => db.auth.signOut());
-
-  db.auth.onAuthStateChange((_evt, session) => { onSession(session); });
-  db.auth.getSession().then(({ data }) => onSession(data.session));
-
   // ---------- البيانات ----------
   async function fetchCars(){
     try {
@@ -248,7 +223,54 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
         .subscribe();
     } catch(e){ /* التحديث الفوري اختياري */ }
   }
-  window.addEventListener('online', () => { if(!el.app.classList.contains('hidden')) fetchCars(); });
+  window.addEventListener('online', fetchCars);
+
+  // ---------- اختيار الاسم ----------
+  let worker = null, isAdmin = false;
+  try { worker = localStorage.getItem('wrsha_worker'); } catch(e){}
+  if(worker && WORKERS.indexOf(worker) === -1) worker = null;
+
+  function showWorker(){
+    const on = !!worker;
+    el.pickCard.classList.toggle('hidden', on);
+    el.app.classList.toggle('hidden', !on);
+    el.switchUser.classList.toggle('hidden', !on);
+    el.who.classList.toggle('hidden', !on);
+    el.who.textContent = on ? 'المستخدم: ' + worker : '';
+    if(on){ fetchCars(); subscribe(); }
+  }
+  WORKERS.forEach(n => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = n;
+    b.addEventListener('click', () => {
+      worker = n;
+      try { localStorage.setItem('wrsha_worker', n); } catch(e){}
+      showWorker();
+    });
+    el.names.appendChild(b);
+  });
+  $('adminToggle').addEventListener('click', () => $('adminForm').classList.toggle('hidden'));
+  $('aLogin').addEventListener('click', async () => {
+    const email = $('aEmail').value.trim(), password = $('aPass').value;
+    if(!email || !password){ setMsg($('aMsg'), 'أدخل البريد وكلمة المرور', 'err'); return; }
+    $('aLogin').disabled = true; setMsg($('aMsg'), 'جارٍ الدخول…');
+    const { error } = await db.auth.signInWithPassword({ email, password });
+    $('aLogin').disabled = false;
+    if(error){ setMsg($('aMsg'), 'البريد أو كلمة المرور غير صحيحة', 'err'); return; }
+    $('aPass').value = ''; setMsg($('aMsg'), '');
+    isAdmin = true; worker = 'المدير'; showWorker();
+  });
+  $('aPass').addEventListener('keydown', e => { if(e.key === 'Enter') $('aLogin').click(); });
+  el.switchUser.addEventListener('click', () => {
+    if(isAdmin){ db.auth.signOut(); isAdmin = false; }
+    worker = null;
+    try { localStorage.removeItem('wrsha_worker'); } catch(e){}
+    showWorker();
+  });
+  db.auth.getSession().then(({ data }) => {
+    if(data.session){ isAdmin = true; worker = 'المدير'; }
+    showWorker();
+  });
 
   el.save.addEventListener('click', async () => {
     const car_number = el.carNumber.value.trim();
@@ -263,7 +285,12 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     el.save.disabled = true;
     setMsg(el.msg, 'جارٍ الحفظ…');
     try {
-      const { error } = await db.from('cars').insert([{ car_number, model, customer_phone, issue_description, status: STATUSES[0] }]);
+      const row = { car_number, model, customer_phone, issue_description, status: STATUSES[0], added_by: worker };
+      let { error } = await db.from('cars').insert([row]);
+      if(error && /added_by/.test(error.message || '')){
+        delete row.added_by;
+        ({ error } = await db.from('cars').insert([row]));
+      }
       if(error) throw error;
       setMsg(el.msg, 'تم حفظ السيارة بنجاح ✓', 'ok');
       el.carNumber.value = el.model.value = el.phone.value = el.issue.value = '';
@@ -398,9 +425,10 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       del.textContent = 'حذف';
       del.addEventListener('click', () => deleteCar(r));
       foot.appendChild(sel);
-      foot.appendChild(del);
+      if(isAdmin) foot.appendChild(del);
       card.appendChild(foot);
 
+      if(r.added_by){ const ab = document.createElement('div'); ab.className = 'date'; ab.textContent = 'أضافها: ' + r.added_by; card.appendChild(ab); }
       if(r.created_at){
         const dt = document.createElement('div');
         dt.className = 'date';
