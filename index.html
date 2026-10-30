@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>سجل الورشة - WRSHA</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f6e56">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <style>
 :root{
@@ -142,6 +144,9 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
   </div>
 </div>
 
+<script>
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+</script>
 <script>
 (function(){
   // ====== الإعدادات: ضع بياناتك هنا ======
