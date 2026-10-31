@@ -1,0 +1,83 @@
+name: Build & Release APK
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: https://vtrdmjidwhzurgtndnjv.supabase.co
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+
+      - name: Version from tag
+        run: |
+          VER="${GITHUB_REF_NAME#v}"
+          IFS=. read MA MI PA <<< "$VER"
+          CODE=$(( MA*10000 + MI*100 + PA ))
+          echo "VER=$VER" >> $GITHUB_ENV
+          echo "CODE=$CODE" >> $GITHUB_ENV
+
+      - name: Prepare www (web files + update checker)
+        run: |
+          mkdir -p www
+          for f in index.html manifest.json sw.js icon-192.png icon-512.png update-check.js; do
+            [ -f "$f" ] && cp "$f" www/ || true
+          done
+          sed -i 's#</body>#<script src="update-check.js"></script></body>#' www/index.html
+          grep -c "update-check.js" www/index.html
+
+      - run: npm install
+      - run: npx cap add android
+      - run: npx cap sync android
+
+      - name: Set version + icons
+        run: |
+          G=android/app/build.gradle
+          sed -i "s/versionCode [0-9]*/versionCode $CODE/; s/versionName \"[^\"]*\"/versionName \"$VER\"/" $G
+          RES=android/app/src/main/res
+          rm -rf $RES/mipmap-anydpi-v26
+          for d in mdpi:48 hdpi:72 xhdpi:96 xxhdpi:144 xxxhdpi:192; do
+            n=${d%%:*}; s=${d##*:}
+            for f in ic_launcher ic_launcher_round ic_launcher_foreground; do
+              [ -d $RES/mipmap-$n ] && convert www/icon-512.png -resize ${s}x${s} $RES/mipmap-$n/$f.png
+            done
+          done
+
+      - name: Build
+        run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
+
+      - name: Sign
+        env:
+          KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          echo "$KS_B64" | base64 -d > warsha.jks
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          IN=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          $BT/zipalign -p -f 4 "$IN" aligned.apk
+          $BT/apksigner sign --ks warsha.jks --ks-key-alias warsha \
+            --ks-pass env:KS_PASS --key-pass env:KS_PASS \
+            --out "warsha-$VER.apk" aligned.apk
+
+      - name: GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: warsha-${{ env.VER }}.apk
+          generate_release_notes: true
+
+      - name: Publish version to Supabase
+        env:
+          KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          URL="https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/warsha-$VER.apk"
+          BODY=$(jq -n --arg n "$VER" --argjson c $CODE --arg u "$URL" '{version_name:$n,version_code:$c,apk_url:$u,notes:"تحسينات وإصلاحات"}')
+          curl -sf -X POST "$SUPABASE_URL/rest/v1/app_version" \
+            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+            -H "Content-Type: application/json" -d "$BODY"
