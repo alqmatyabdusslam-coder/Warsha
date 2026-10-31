@@ -123,6 +123,18 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
 .photoBtn img{width:100%;max-height:260px;object-fit:cover;display:block}
 .car .shot{width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block}
 .car .amount{font-weight:700;color:var(--price)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg button{font:inherit;font-size:16px;font-weight:700;padding:13px 6px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));background:transparent;color:var(--text);cursor:pointer;line-height:1.3}
+.seg button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.car .work{display:inline-block;margin-top:6px;font-size:14px;font-weight:700;color:var(--price);background:var(--chip);border-radius:999px;padding:3px 12px}
+.car .notes{margin-top:8px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--text) 5%,transparent);font-size:13px;color:var(--muted)}
+.car .notes div+div{margin-top:4px}
+.modalWrap{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55)}
+.modal{width:100%;max-width:420px;max-height:90vh;overflow-y:auto;background:var(--bg);border:1px solid color-mix(in srgb,var(--accent) 50%,var(--line));border-radius:16px;padding:16px}
+.modal h3{margin:0 0 8px;font-size:19px}
+.modal .info{font-size:14px;color:var(--muted);margin-bottom:12px}
+.modal .btns{display:flex;gap:8px;margin-top:6px}
+.modal .btns .btn{flex:1}
 .hidden{display:none!important}
 </style>
 </head>
@@ -162,27 +174,19 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
   <div id="app" class="hidden">
     <div class="card" id="formCard">
       <div class="field">
-        <label for="carNumber">رقم السيارة</label>
-        <input id="carNumber" class="ltr" type="text" autocomplete="off" placeholder="مثال: أ ب ج 1234">
+        <label for="phone">رقم الزبون</label>
+        <input id="phone" class="ltr" type="tel" inputmode="tel" autocomplete="off" placeholder="09XXXXXXXX">
       </div>
       <div class="field">
-        <label for="model">موديل السيارة</label>
-        <input id="model" type="text" autocomplete="off" placeholder="مثال: تويوتا كامري 2022">
+        <label id="workLabel">نوع العمل</label>
+        <div class="seg" id="work" role="radiogroup" aria-labelledby="workLabel"></div>
       </div>
       <div class="field">
-        <label for="phone">رقم هاتف الزبون</label>
-        <input id="phone" class="ltr" type="text" autocomplete="off" placeholder="09XXXXXXXX">
+        <label for="amount">السعر</label>
+        <input id="amount" class="ltr" type="text" inputmode="decimal" autocomplete="off" placeholder="مثال: 150">
       </div>
       <div class="field">
-        <label for="issue">وصف المشكلة / الإصلاح</label>
-        <input id="issue" type="text" autocomplete="off" placeholder="اكتب وصف العطل هنا...">
-      </div>
-      <div class="field">
-        <label for="amount">القيمة</label>
-        <input id="amount" class="ltr" type="text" autocomplete="off" placeholder="مثال: 150">
-      </div>
-      <div class="field">
-        <label for="photo">تصوير</label>
+        <label for="photo">تصوير السيارة</label>
         <div class="photoBtn" id="photoBox">
           <span id="photoHint">📷 اضغط لالتقاط صورة</span>
           <input id="photo" type="file" accept="image/*" capture="environment">
@@ -192,7 +196,7 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
       <div class="msg" id="msg"></div>
     </div>
 
-    <div class="bar"><input id="q" type="search" class="ltr" placeholder="🔍 ابحث برقم السيارة أو الهاتف أو الموديل"></div>
+    <div class="bar"><input id="q" type="search" class="ltr" placeholder="🔍 ابحث برقم الزبون"></div>
 
     <div class="stats">
       <div class="chip">داخل الورشة<b id="cnt">0</b></div>
@@ -239,7 +243,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   const $ = id => document.getElementById(id);
   const el = {
     banner:$('banner'), pickCard:$('pickCard'), app:$('app'), switchUser:$('switchUser'), who:$('who'), names:$('names'),
-    carNumber:$('carNumber'), model:$('model'), phone:$('phone'), issue:$('issue'),
+    phone:$('phone'), work:$('work'),
     amount:$('amount'), photo:$('photo'), photoBox:$('photoBox'), photoHint:$('photoHint'),
     save:$('save'), msg:$('msg'), q:$('q'), list:$('list'), filters:$('filters')
   };
@@ -343,6 +347,36 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     }
   });
 
+  // ---------- نوع العمل ----------
+  const WORK_TYPES = ['سمكره', 'زواق', 'سمكره وزواق'];
+  let workType = '';
+  function setWork(v){
+    workType = v;
+    Array.prototype.forEach.call(el.work.children, b => {
+      const on = b.textContent === v;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+  WORK_TYPES.forEach(w => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = w;
+    b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
+    b.addEventListener('click', () => setWork(w));
+    el.work.appendChild(b);
+  });
+
+  // ---------- أدوات ----------
+  const parseNum = v => {
+    const t = normDigits(v).replace(/[,٫،]/g, '.');
+    return /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+  };
+  const fmt = n => String(Math.round(n * 100) / 100);
+  const today = () => new Date().toLocaleDateString('ar-EG');
+  const addNote = (old, line) => (old ? old + '\n' : '') + line;
+  const hasVal = v => v !== null && v !== undefined && v !== '';
+  function flash(t){ showBanner(t); setTimeout(() => showBanner(''), 5000); }
+
   // ---------- اختيار الاسم ----------
   let worker = null, isAdmin = false;
   try { worker = localStorage.getItem('wrsha_worker'); } catch(e){}
@@ -392,22 +426,18 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   });
 
   el.save.addEventListener('click', async () => {
-    const car_number = el.carNumber.value.trim();
-    const model = el.model.value.trim();
     const customer_phone = normDigits(el.phone.value.trim());
-    const issue_description = el.issue.value.trim();
-    const amountRaw = normDigits(el.amount.value.trim()).replace(/[,٫،]/g, '.');
-    if(amountRaw !== '' && !(Number(amountRaw) >= 0)){ setMsg(el.msg, 'القيمة غير صحيحة (أرقام فقط)', 'err'); el.amount.focus(); return; }
-    const amount = amountRaw === '' ? null : Number(amountRaw);
+    const amount = parseNum(el.amount.value.trim());
 
-    if(!car_number){ setMsg(el.msg, 'يرجى إدخال رقم السيارة', 'err'); el.carNumber.focus(); return; }
-    if(!customer_phone){ setMsg(el.msg, 'يرجى إدخال رقم هاتف الزبون', 'err'); el.phone.focus(); return; }
+    if(!customer_phone){ setMsg(el.msg, 'يرجى إدخال رقم الزبون', 'err'); el.phone.focus(); return; }
     if(!validPhone(customer_phone)){ setMsg(el.msg, 'رقم الهاتف غير صحيح (أرقام فقط، من 7 إلى 15 رقماً)', 'err'); el.phone.focus(); return; }
+    if(!workType){ setMsg(el.msg, 'اختر نوع العمل', 'err'); return; }
+    if(isNaN(amount)){ setMsg(el.msg, 'أدخل السعر (أرقام فقط)', 'err'); el.amount.focus(); return; }
 
     el.save.disabled = true;
     setMsg(el.msg, 'جارٍ الحفظ…');
     try {
-      const row = { car_number, model, customer_phone, issue_description, amount, photo: photoData || null, status: STATUSES[0], added_by: worker };
+      const row = { car_number: '', model: '', customer_phone, issue_description: workType, amount, photo: photoData || null, status: STATUSES[0], added_by: worker };
       let { error } = await db.from('cars').insert([row]);
       if(error && /added_by/.test(error.message || '')){
         delete row.added_by;
@@ -415,7 +445,8 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       }
       if(error) throw error;
       setMsg(el.msg, 'تم حفظ السيارة بنجاح ✓', 'ok');
-      el.carNumber.value = el.model.value = el.phone.value = el.issue.value = el.amount.value = '';
+      el.phone.value = el.amount.value = '';
+      setWork('');
       resetPhoto();
       fetchCars();
       setTimeout(() => setMsg(el.msg, ''), 2500);
@@ -426,18 +457,111 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     }
   });
 
-  async function updateStatus(car, status, selectEl){
-    const old = car.status;
-    car.status = status;
+  // يعدّل السجل فوراً ثم يحفظه؛ يرجع نص الخطأ أو '' عند النجاح
+  async function patchCar(car, patch){
+    const old = {};
+    Object.keys(patch).forEach(k => { old[k] = car[k]; });
+    Object.assign(car, patch);
     render();
-    const { error } = await db.from('cars').update({ status }).eq('id', car.id);
+    const { error } = await db.from('cars').update(patch).eq('id', car.id);
     if(error){
-      car.status = old;
-      selectEl.value = old;
+      Object.assign(car, old);
       render();
-      showBanner('تعذر تحديث الحالة: ' + (error.message || 'حاول مرة أخرى'));
-      setTimeout(() => showBanner(''), 4000);
+      const m = error.message || '';
+      return /notes|paid/.test(m) ? 'يلزم إضافة العمودين notes و paid في Supabase أولاً' : (m || 'حاول مرة أخرى');
     }
+    return '';
+  }
+
+  // ---------- نافذة تأكيد ----------
+  function openModal(cfg){
+    const wrap = document.createElement('div');
+    wrap.className = 'modalWrap';
+    const box = document.createElement('div');
+    box.className = 'modal';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    const h = document.createElement('h3'); h.textContent = cfg.title; box.appendChild(h);
+    if(cfg.info){ const i = document.createElement('div'); i.className = 'info'; i.textContent = cfg.info; box.appendChild(i); }
+    const inputs = {};
+    cfg.fields.forEach(f => {
+      const fd = document.createElement('div'); fd.className = 'field';
+      const lb = document.createElement('label'); lb.textContent = f.label; lb.htmlFor = 'm_' + f.key;
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.id = 'm_' + f.key; inp.autocomplete = 'off';
+      if(f.num){ inp.className = 'ltr'; inp.inputMode = 'decimal'; }
+      inp.placeholder = f.placeholder || ''; inp.value = f.value || '';
+      inputs[f.key] = inp;
+      fd.appendChild(lb); fd.appendChild(inp); box.appendChild(fd);
+    });
+    const msg = document.createElement('div'); msg.className = 'msg'; box.appendChild(msg);
+    const btns = document.createElement('div'); btns.className = 'btns';
+    const okB = document.createElement('button'); okB.type = 'button'; okB.className = 'btn'; okB.textContent = cfg.ok;
+    const noB = document.createElement('button'); noB.type = 'button'; noB.className = 'btn plain'; noB.textContent = 'إلغاء';
+    btns.appendChild(okB); btns.appendChild(noB); box.appendChild(btns);
+    wrap.appendChild(box);
+    const onKey = e => { if(e.key === 'Escape') close(); };
+    function close(){ wrap.remove(); document.removeEventListener('keydown', onKey); }
+    document.addEventListener('keydown', onKey);
+    noB.addEventListener('click', close);
+    wrap.addEventListener('click', e => { if(e.target === wrap) close(); });
+    okB.addEventListener('click', async () => {
+      const vals = {};
+      Object.keys(inputs).forEach(k => { vals[k] = inputs[k].value.trim(); });
+      okB.disabled = true; setMsg(msg, 'جارٍ الحفظ…');
+      const err = await cfg.onConfirm(vals);
+      if(err){ setMsg(msg, err, 'err'); okB.disabled = false; return; }
+      close();
+    });
+    document.body.appendChild(wrap);
+    const first = box.querySelector('input'); if(first) first.focus();
+  }
+
+  // زيادة السعر مع ملاحظة
+  function openIncrease(r){
+    const cur = Number(r.amount) || 0;
+    openModal({
+      title: 'زيادة السعر',
+      info: 'السعر الحالي: ' + fmt(cur),
+      fields: [
+        { key: 'add', label: 'مقدار الزيادة', num: true, placeholder: 'مثال: 50' },
+        { key: 'note', label: 'ملاحظة (سبب الزيادة)', placeholder: 'اكتب سبب الزيادة' }
+      ],
+      ok: 'حفظ الزيادة',
+      onConfirm: async v => {
+        const add = parseNum(v.add);
+        if(!(add > 0)) return 'أدخل مقدار زيادة صحيحاً';
+        if(!v.note) return 'اكتب ملاحظة توضح سبب الزيادة';
+        const total = Math.round((cur + add) * 100) / 100;
+        const line = '➕ زيادة ' + fmt(add) + ' (الإجمالي ' + fmt(total) + '): ' + v.note + ' — ' + (worker || '') + ' — ' + today();
+        return await patchCar(r, { amount: total, notes: addNote(r.notes, line) });
+      }
+    });
+  }
+
+  // تأكيد التسليم مع إمكانية تقليل المبلغ
+  function openDeliver(r){
+    const known = hasVal(r.amount);
+    const due = known ? Number(r.amount) : 0;
+    openModal({
+      title: 'تأكيد التسليم',
+      info: (known ? 'السعر المطلوب: ' + fmt(due) + '. ' : '') + 'أكّد المبلغ المدفوع، ويمكنك تقليله عند الحاجة.',
+      fields: [
+        { key: 'paid', label: 'المبلغ المدفوع', num: true, value: known ? fmt(due) : '' },
+        { key: 'note', label: 'ملاحظة (اختياري)' }
+      ],
+      ok: 'تأكيد التسليم',
+      onConfirm: async v => {
+        const paid = parseNum(v.paid);
+        if(isNaN(paid)) return 'أدخل المبلغ المدفوع';
+        if(known && paid > due) return 'المبلغ المدفوع أكبر من السعر. لزيادة السعر استخدم زر زيادة السعر.';
+        const who = ' — ' + (worker || '') + ' — ' + today();
+        let notes = r.notes;
+        if(known && paid < due) notes = addNote(notes, '➖ تخفيض عند التسليم من ' + fmt(due) + ' إلى ' + fmt(paid) + (v.note ? ': ' + v.note : '') + who);
+        else if(v.note) notes = addNote(notes, '📝 ' + v.note + who);
+        return await patchCar(r, { status: DELIVERED, paid, amount: paid, notes: notes || null });
+      }
+    });
   }
 
   async function deleteCar(car){
@@ -516,25 +640,41 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
         const shot = document.createElement('img');
         shot.className = 'shot';
         shot.src = r.photo;
-        shot.alt = 'صورة السيارة ' + r.car_number;
+        shot.alt = 'صورة السيارة';
         shot.loading = 'lazy';
         card.appendChild(shot);
       }
 
       const plate = document.createElement('div');
       plate.className = 'plate';
-      plate.textContent = '🚗 ' + r.car_number;
+      plate.textContent = '📱 ' + r.customer_phone;
       card.appendChild(plate);
 
-      card.appendChild(line('الموديل', r.model || 'غير محدد'));
-      const ph = line('الهاتف', r.customer_phone);
-      ph.lastChild.parentNode.style.direction = 'rtl';
-      card.appendChild(ph);
-      card.appendChild(line('المشكلة', r.issue_description || 'لا توجد ملاحظات'));
-      if(r.amount !== null && r.amount !== undefined && r.amount !== ''){
-        const av = line('القيمة', String(r.amount));
-        av.lastChild.parentNode.classList.add('amount');
+      if(r.issue_description){
+        const w = document.createElement('div');
+        w.className = 'work';
+        w.textContent = '🔧 ' + r.issue_description;
+        card.appendChild(w);
+      }
+      if(r.car_number) card.appendChild(line('رقم السيارة', r.car_number));
+      if(r.model) card.appendChild(line('الموديل', r.model));
+      if(hasVal(r.amount)){
+        const av = line('السعر', fmt(Number(r.amount)));
+        av.classList.add('amount');
         card.appendChild(av);
+      }
+      if(delivered && hasVal(r.paid)){
+        const pv = line('المدفوع', fmt(Number(r.paid)));
+        pv.classList.add('amount');
+        card.appendChild(pv);
+      }
+      if(r.notes){
+        const nb = document.createElement('div');
+        nb.className = 'notes';
+        String(r.notes).split('\n').filter(Boolean).forEach(t => {
+          const d = document.createElement('div'); d.textContent = t; nb.appendChild(d);
+        });
+        card.appendChild(nb);
       }
 
       const acts = document.createElement('div');
@@ -551,29 +691,33 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       acts.appendChild(wa);
       card.appendChild(acts);
 
+      const mk = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + cls; b.textContent = t; b.addEventListener('click', fn); return b; };
+      const del = mk('حذف', 'danger', () => deleteCar(r));
       const foot = document.createElement('div');
       foot.className = 'foot';
-      const sel = document.createElement('select');
-      sel.setAttribute('aria-label', 'حالة السيارة');
-      STATUSES.forEach(s => {
-        const o = document.createElement('option');
-        o.value = s; o.textContent = s;
-        sel.appendChild(o);
-      });
-      sel.value = r.status || STATUSES[0];
-      sel.addEventListener('change', () => updateStatus(r, sel.value, sel));
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'btn small danger';
-      del.textContent = 'حذف';
-      del.addEventListener('click', () => deleteCar(r));
-      const mk = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + cls; b.textContent = t; b.addEventListener('click', fn); return b; };
       if(delivered){
-        foot.appendChild(mk('↩ إرجاع للورشة', 'plain', () => updateStatus(r, STATUSES[0], {})));
+        foot.appendChild(mk('↩ إرجاع للورشة', 'plain', async () => {
+          const e = await patchCar(r, { status: STATUSES[0], paid: null });
+          if(e) flash('تعذر التحديث: ' + e);
+        }));
         if(isAdmin) foot.appendChild(del);
       } else {
+        acts.appendChild(mk('➕ زيادة السعر', 'plain', () => openIncrease(r)));
+        const sel = document.createElement('select');
+        sel.setAttribute('aria-label', 'حالة السيارة');
+        STATUSES.slice(0, 2).forEach(s => {
+          const o = document.createElement('option');
+          o.value = s; o.textContent = s;
+          sel.appendChild(o);
+        });
+        sel.value = r.status || STATUSES[0];
+        sel.addEventListener('change', async () => {
+          const old = r.status;
+          const e = await patchCar(r, { status: sel.value });
+          if(e){ sel.value = old; flash('تعذر تحديث الحالة: ' + e); }
+        });
         foot.appendChild(sel);
-        foot.appendChild(mk('✅ تسليم', 'done', () => updateStatus(r, DELIVERED, sel)));
+        foot.appendChild(mk('✅ تسليم', 'done', () => openDeliver(r)));
         if(isAdmin) foot.appendChild(del);
       }
       card.appendChild(foot);
@@ -597,7 +741,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'لم يتم تسليم أي سيارة بعد.'; box.appendChild(d);
     }
     done.forEach(r => box.appendChild(buildCard(r, true)));
-    const total = done.reduce((t, c) => t + (Number(c.amount) || 0), 0);
+    const total = done.reduce((t, c) => t + (Number(hasVal(c.paid) ? c.paid : c.amount) || 0), 0);
     $('dtotal').textContent = Math.round(total * 100) / 100;
     $('cntTab').textContent = done.length;
   }
