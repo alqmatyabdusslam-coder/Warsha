@@ -37,6 +37,9 @@ jobs:
       - run: npx cap add android
       - run: npx cap sync android
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
+
       - name: Set version + icons
         run: |
           G=android/app/build.gradle
@@ -58,37 +61,3 @@ jobs:
           KS_B64: ${{ secrets.KEYSTORE_BASE64 }}
           KS_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          echo "$KS_B64" | base64 -d > warsha.jks
-          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          IN=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
-          $BT/zipalign -p -f 4 "$IN" aligned.apk
-          $BT/apksigner sign --ks warsha.jks --ks-key-alias warsha \
-            --ks-pass env:KS_PASS --key-pass env:KS_PASS \
-            --out "warsha-$VER.apk" aligned.apk
-
-      - name: GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: warsha-${{ env.VER }}.apk
-          generate_release_notes: true
-
-      - name: Upload APK to Supabase Storage + publish version
-        env:
-          KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: |
-          curl -s -X POST "$SUPABASE_URL/storage/v1/bucket" \
-            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"id":"apk","name":"apk","public":true}' || true
-          echo
-          curl -sf -X POST "$SUPABASE_URL/storage/v1/object/apk/warsha-$VER.apk" \
-            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
-            -H "Content-Type: application/vnd.android.package-archive" \
-            -H "x-upsert: true" \
-            --data-binary @"warsha-$VER.apk"
-          echo
-          URL="$SUPABASE_URL/storage/v1/object/public/apk/warsha-$VER.apk"
-          BODY=$(jq -n --arg n "$VER" --argjson c $CODE --arg u "$URL" '{version_name:$n,version_code:$c,apk_url:$u,notes:"تحسينات وإصلاحات"}')
-          curl -sf -X POST "$SUPABASE_URL/rest/v1/app_version" \
-            -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
-            -H "Content-Type: application/json" -d "$BODY"
