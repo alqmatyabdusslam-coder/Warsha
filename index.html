@@ -811,8 +811,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
         c.appendChild(mk('🗑 حذف الحساب', 'danger', async () => {
           if(!confirm('حذف حساب ' + p.username + ' نهائيًا؟ لا يمكن التراجع.')) return;
           const r = await db.rpc('delete_employee', { uid: p.id });
-          if(r.error){ flash('تعذر الحذف: ' + (r.error.message || '')); return; }
-          flash('تم حذف الحساب ✓');
+          if(r.error){ alert('تعذر الحذف:\n' + (r.error.message || '') + (r.error.details ? '\n' + r.error.details : '') + (r.error.hint ? '\n' + r.error.hint : '')); return; }
           loadStaff();
         }));
       }
