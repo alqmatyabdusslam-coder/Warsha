@@ -218,6 +218,7 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
   </div>
   <div class="menu" id="menu">
     <button class="mitem" id="goRecords" type="button"><span>📋 السجل (المُسلَّمة)</span><em id="cntTab">0</em></button>
+    <button class="mitem" id="goPush" type="button"><span>🔔 الإشعارات</span><em id="pushState">…</em></button>
   </div>
   <div class="rec hidden" id="recView">
     <div class="dsum">إجمالي القيمة: <b id="dtotal">0</b></div>
@@ -390,7 +391,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     el.who.classList.toggle('hidden', !on);
     $('burger').classList.toggle('hidden', !on);
     el.who.textContent = on ? 'المستخدم: ' + worker : '';
-    if(on){ fetchCars(); subscribe(); } else { openDrawer(false); }
+    if(on){ fetchCars(); subscribe(); syncPush(); } else { openDrawer(false); }
   }
   WORKERS.forEach(n => {
     const b = document.createElement('button');
@@ -745,6 +746,53 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     $('dtotal').textContent = Math.round(total * 100) / 100;
     $('cntTab').textContent = done.length;
   }
+
+  // ---------- إشعارات السيارات الجديدة (Web Push) ----------
+  const VAPID_PUBLIC_KEY = 'BDnPuWQliT2ND9Mu7QiIPucdxg_DgynOiDVAJNlhIO1OWJnKkDnNqN40Mu_H_7UzRhlIRk4ZYLyV0jZKuO1lmXA';
+  const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  function b64ToU8(b){
+    const s = (b + '='.repeat((4 - b.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
+    const r = atob(s);
+    return Uint8Array.from(r, c => c.charCodeAt(0));
+  }
+  function setPushLabel(){
+    const e = $('pushState');
+    if(!pushOk){ e.textContent = 'غير مدعوم'; return; }
+    e.textContent = Notification.permission === 'granted' ? 'مفعّلة' : (Notification.permission === 'denied' ? 'محظورة' : 'غير مفعّلة');
+  }
+  async function savePush(sub){
+    const j = sub.toJSON();
+    const { error } = await db.from('push_subs').upsert(
+      { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, worker: worker || null },
+      { onConflict: 'endpoint' });
+    return error;
+  }
+  async function enablePush(){
+    if(!pushOk){ flash('هذا المتصفح لا يدعم الإشعارات. افتح التطبيق من Chrome.'); return; }
+    const perm = await Notification.requestPermission();
+    setPushLabel();
+    if(perm !== 'granted'){ flash('لم يتم السماح بالإشعارات من إعدادات الجوال'); return; }
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      let sub = await reg.pushManager.getSubscription();
+      if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC_KEY) });
+      const err = await savePush(sub);
+      flash(err ? 'تعذر حفظ الاشتراك: ' + err.message : 'تم تفعيل الإشعارات ✓');
+    } catch(e){
+      flash('تعذر التفعيل: ' + (e.message || ''));
+    }
+  }
+  // يحدّث اسم المستخدم المرتبط بهذا الجهاز عند تغيير المستخدم
+  async function syncPush(){
+    if(!pushOk || Notification.permission !== 'granted') return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if(sub) await savePush(sub);
+    } catch(e){}
+  }
+  setPushLabel();
+  $('goPush').addEventListener('click', () => { openDrawer(false); enablePush(); });
 
   // ---------- القائمة الجانبية ----------
   function showView(name){
