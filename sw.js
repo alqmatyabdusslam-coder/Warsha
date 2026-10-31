@@ -1,5 +1,5 @@
 // الشبكة أولاً: يجلب أحدث نسخة دائماً، ويستعمل المخزَّن فقط عند انقطاع الإنترنت
-const CACHE = 'wrsha-v3';
+const CACHE = 'wrsha-v4';
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -43,6 +43,8 @@ self.addEventListener('push', e => {
     badge: './icon-192.png',
     dir: 'rtl',
     lang: 'ar',
+    vibrate: [200, 100, 200, 100, 300],
+    silent: false,
     data: { url: d.url || './' }
   }));
 });
