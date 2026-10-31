@@ -37,6 +37,8 @@ jobs:
       - run: npx cap add android
       - run: npx cap sync android
 
+      - name: Install ImageMagick
+        run: sudo apt-get update && sudo apt-get install -y imagemagick
       - name: Set version + icons
         run: |
           G=android/app/build.gradle
