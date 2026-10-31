@@ -59,6 +59,8 @@ body{--g1:8%;--g2:8%;
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .seg button{font:inherit;font-size:16px;font-weight:700;padding:13px 6px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));background:transparent;color:var(--text);cursor:pointer}
 .seg button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.seg.two{grid-template-columns:repeat(2,1fr)}
+.warnBox{background:var(--warn-bg);color:var(--warn);border-radius:12px;padding:10px 12px;font-size:15px;font-weight:600;margin-bottom:12px}
 .tag{display:inline-block;background:var(--chip);color:var(--price);border-radius:999px;padding:2px 12px;font-size:14px;font-weight:700}
 .car .extra{font-size:14px;color:var(--muted);margin:2px 0 0;padding-inline-start:10px}
 .car .total{font-size:19px;font-weight:700;color:var(--price);margin-top:6px}
@@ -199,6 +201,10 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
         <label>نوع العمل</label>
         <div class="seg" id="seg"></div>
       </div>
+      <div class="field">
+        <label>المواد</label>
+        <div class="seg two" id="segMat"></div>
+      </div>
       <button class="btn" id="save" type="button">حفظ في السجل</button>
       <div class="msg" id="msg"></div>
     </div>
@@ -218,6 +224,7 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
   <div class="box">
     <h3 id="dlgT">تأكيد التسليم</h3>
     <div class="req">المبلغ المطلوب: <b id="dReq">0</b></div>
+    <div class="warnBox hidden" id="dMat"></div>
     <div class="field"><label for="dPaid">المبلغ المدفوع</label><input id="dPaid" class="ltr" type="text" autocomplete="off"></div>
     <div class="diff" id="dDiff"></div>
     <div class="field hidden" id="dNoteBox"><label for="dNote">سبب التخفيض</label><input id="dNote" type="text" autocomplete="off" placeholder="اكتب السبب"></div>
@@ -282,6 +289,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
 
   const STATUSES = ['قيد العمل', 'جاهزة', 'تم التسليم'];
   const DELIVERED = STATUSES[2];
+  const BRUSH = '<svg viewBox="0 0 24 24" width="20" height="20" style="vertical-align:-4px" aria-hidden="true"><path d="M21 3l-7.2 7.2" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M13.8 10.2l-3 3" stroke="currentColor" stroke-width="3.6" opacity=".55" fill="none"/><path d="M10.8 13.2c-2.6-.6-5 1-5.3 3.6-.1 1-.7 1.8-1.6 2.3 3.4 1.8 8.2.5 9.2-2.8.4-1.4-.4-2.6-2.3-3.1z" fill="#ff7a1a" stroke="currentColor" stroke-width=".8"/><circle cx="4.2" cy="21.2" r="1.2" fill="#ff7a1a"/></svg>';
   const normDigits = v => v.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
   const $ = id => document.getElementById(id);
   const el = {
@@ -486,6 +494,17 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     });
     $('seg').appendChild(b);
   });
+  let withMat = false;
+  [[true, BRUSH + ' بالمواد'], [false, '❌ بلا مواد']].forEach(([v, t]) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.innerHTML = t;
+    if(v === false) b.classList.add('on');
+    b.addEventListener('click', () => {
+      withMat = v;
+      Array.prototype.forEach.call($('segMat').children, x => x.classList.toggle('on', x === b));
+    });
+    $('segMat').appendChild(b);
+  });
 
   const num = v => Number(v) || 0;
   const fmt = n => String(Math.round(num(n) * 100) / 100);
@@ -505,7 +524,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     setMsg(el.msg, 'جارٍ الحفظ…');
     try {
       const row = { car_number: customer_phone, model: '', customer_phone, issue_description: '', service,
-        amount: Number(amountRaw), photo: photoData || null, extras: [], status: STATUSES[0], added_by: worker };
+        amount: Number(amountRaw), photo: photoData || null, extras: [], status: STATUSES[0], added_by: worker, with_materials: withMat, materials_cost: 0 };
       let { error } = await db.from('cars').insert([row]);
       if(error && /added_by/.test(error.message || '')){
         delete row.added_by;
@@ -517,10 +536,13 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       resetPhoto();
       service = '';
       Array.prototype.forEach.call($('seg').children, x => x.classList.remove('on'));
+      withMat = false;
+      Array.prototype.forEach.call($('segMat').children, (x, i) => x.classList.toggle('on', i === 1));
       fetchCars();
       setTimeout(() => setMsg(el.msg, ''), 2500);
     } catch(e){
-      setMsg(el.msg, 'فشل الحفظ: ' + (e.message || 'حاول مرة أخرى'), 'err');
+      const t = e.message || '';
+      setMsg(el.msg, /materials/.test(t) ? 'يلزم تنفيذ كود SQL الخاص بالمواد في Supabase أولاً' : 'فشل الحفظ: ' + (t || 'حاول مرة أخرى'), 'err');
     } finally {
       el.save.disabled = false;
     }
@@ -557,17 +579,30 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     d.className = 'diff' + (diff < 0 ? ' neg' : '');
     $('dNoteBox').classList.toggle('hidden', !(diff < 0));
   }
+  function updMat(){
+    const b = $('dMat');
+    if(!dlgCar || dlgCar.with_materials !== true){ b.classList.add('hidden'); return; }
+    const m = num(dlgCar.materials_cost);
+    const raw = cleanAmt($('dPaid').value);
+    const paid = (raw !== '' && Number(raw) >= 0) ? Number(raw) : totalOf(dlgCar);
+    b.textContent = m > 0
+      ? '⚠ تذكير: أخذتَ مواد بقيمة ' + fmt(m) + ' وتُخصم منك. المتبقي لك بعد الخصم: ' + fmt(paid - m)
+      : '⚠ تذكير: هذه السيارة بالمواد ولم تُسجَّل قيمة المواد بعد. أضفها من زر «إضافة قيمة المواد» قبل التسليم.';
+    b.classList.remove('hidden');
+  }
   function openDeliver(car){
     dlgCar = car;
     $('dReq').textContent = fmt(totalOf(car));
     $('dPaid').value = fmt(totalOf(car));
     $('dNote').value = ''; setMsg($('dMsg'), '');
     updDiff();
+    updMat();
     $('dlg').classList.remove('hidden');
     $('dPaid').focus();
   }
   function closeDeliver(){ $('dlg').classList.add('hidden'); dlgCar = null; }
   $('dPaid').addEventListener('input', updDiff);
+  $('dPaid').addEventListener('input', updMat);
   $('dCancel').addEventListener('click', closeDeliver);
   $('dOk').addEventListener('click', async () => {
     const raw = cleanAmt($('dPaid').value);
@@ -632,7 +667,13 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
 
     const sv = document.createElement('div'); sv.className = 'row';
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = r.service || 'غير محدد';
-    sv.appendChild(tag); card.appendChild(sv);
+    sv.appendChild(tag);
+    if(r.with_materials === true || r.with_materials === false){
+      const mtag = document.createElement('span'); mtag.className = 'tag'; mtag.style.marginInlineStart = '6px';
+      mtag.innerHTML = r.with_materials ? BRUSH + ' بالمواد' : '❌ بلا مواد';
+      sv.appendChild(mtag);
+    }
+    card.appendChild(sv);
 
     card.appendChild(line('السعر', fmt(r.amount)));
     extrasOf(r).forEach(x => {
@@ -644,6 +685,9 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     const tot = document.createElement('div'); tot.className = 'total';
     tot.textContent = 'الإجمالي: ' + fmt(totalOf(r));
     card.appendChild(tot);
+    if(r.with_materials === true){
+      card.appendChild(line('المواد (تُخصم منك)', num(r.materials_cost) > 0 ? fmt(r.materials_cost) : 'لم تُحدَّد بعد'));
+    }
 
     if(delivered){
       card.appendChild(line('المدفوع', fmt(r.paid !== null && r.paid !== undefined ? r.paid : totalOf(r))));
@@ -652,12 +696,35 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       }
     }
 
+    if(delivered && r.with_materials === true && num(r.materials_cost) > 0){
+      const pv = r.paid !== null && r.paid !== undefined ? num(r.paid) : totalOf(r);
+      card.appendChild(line('المتبقي لك بعد المواد', fmt(pv - num(r.materials_cost))));
+    }
+
     const acts = document.createElement('div');
     acts.className = 'acts';
     const call = document.createElement('a'); call.href = telLink(r.customer_phone); call.textContent = '📞 اتصال';
     const wa = document.createElement('a'); wa.href = waLink(r.customer_phone); wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '💬 واتساب';
     acts.appendChild(call); acts.appendChild(wa);
     card.appendChild(acts);
+
+    if(!delivered && r.with_materials === true){
+      const mrow = document.createElement('div'); mrow.className = 'acts';
+      const mf = document.createElement('div'); mf.className = 'xform hidden';
+      mf.innerHTML = '<div class="field"><label>قيمة المواد</label><input class="ltr ma" type="text" autocomplete="off"></div><div class="msg mm"></div>';
+      const mi = mf.querySelector('.ma');
+      mi.value = num(r.materials_cost) > 0 ? fmt(r.materials_cost) : '';
+      mf.appendChild(mk('حفظ قيمة المواد', 'done', async () => {
+        const a = cleanAmt(mi.value), m = mf.querySelector('.mm');
+        if(a === '' || !(Number(a) >= 0)){ setMsg(m, 'أدخل قيمة المواد بالأرقام', 'err'); return; }
+        await patch(r, { materials_cost: Number(a) });
+      }));
+      const mb = mk('', 'plain', () => mf.classList.toggle('hidden'));
+      mb.innerHTML = BRUSH + ' ' + (num(r.materials_cost) > 0 ? 'تعديل قيمة المواد' : 'إضافة قيمة المواد');
+      mrow.appendChild(mb);
+      card.appendChild(mrow);
+      card.appendChild(mf);
+    }
 
     const foot = document.createElement('div');
     foot.className = 'foot';
@@ -730,6 +797,13 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
         c.appendChild(mk(p.active ? 'إيقاف الحساب' : 'تفعيل الحساب', p.active ? 'danger' : 'done', async () => {
           const r = await db.from('profiles').update({ active: !p.active }).eq('id', p.id);
           if(r.error) flash('تعذر التحديث');
+          loadStaff();
+        }));
+        c.appendChild(mk('🗑 حذف الحساب', 'danger', async () => {
+          if(!confirm('حذف حساب ' + p.username + ' نهائيًا؟ لا يمكن التراجع.')) return;
+          const r = await db.rpc('delete_employee', { uid: p.id });
+          if(r.error){ flash('تعذر الحذف: ' + (r.error.message || '')); return; }
+          flash('تم حذف الحساب ✓');
           loadStaff();
         }));
       }
