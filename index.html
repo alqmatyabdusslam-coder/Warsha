@@ -56,6 +56,28 @@ body{--g1:8%;--g2:8%;
 .pickTitle{font-size:17px;font-weight:700;margin:0 0 10px}
 .link{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:14px;cursor:pointer;padding:8px 0}
 .who{font-size:13px;color:var(--muted)}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg button{font:inherit;font-size:16px;font-weight:700;padding:13px 6px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));background:transparent;color:var(--text);cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.tag{display:inline-block;background:var(--chip);color:var(--price);border-radius:999px;padding:2px 12px;font-size:14px;font-weight:700}
+.car .extra{font-size:14px;color:var(--muted);margin:2px 0 0;padding-inline-start:10px}
+.car .total{font-size:19px;font-weight:700;color:var(--price);margin-top:6px}
+.xform{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.xform .field{margin-bottom:10px}
+.modal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:16px;width:min(100%,420px)}
+.modal h3{margin:0 0 10px;font-size:19px}
+.modal .req{font-size:16px;margin-bottom:12px}
+.modal .req b{color:var(--price)}
+.diff{font-size:14px;min-height:20px;margin:-6px 0 10px}
+.diff.neg{color:var(--danger)}
+.mbtns{display:flex;gap:8px;margin-top:6px}
+.mbtns .btn{width:auto;flex:1;font-size:16px}
+.chk{display:flex;align-items:center;gap:10px;margin:0 0 14px;font-size:16px;color:var(--text);cursor:pointer}
+.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:16px}
+.sw:first-of-type{border-top:0}
+.sw input{width:22px;height:22px;accent-color:var(--accent)}
 .btn.plain{background:transparent;color:var(--text);border:1px solid var(--line)}
 .btn.done{background:var(--accent);color:var(--accent-text)}
 .veil{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
@@ -123,18 +145,6 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
 .photoBtn img{width:100%;max-height:260px;object-fit:cover;display:block}
 .car .shot{width:100%;max-height:240px;object-fit:cover;border-radius:12px;margin-bottom:10px;display:block}
 .car .amount{font-weight:700;color:var(--price)}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.seg button{font:inherit;font-size:16px;font-weight:700;padding:13px 6px;border-radius:12px;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));background:transparent;color:var(--text);cursor:pointer;line-height:1.3}
-.seg button.on{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
-.car .work{display:inline-block;margin-top:6px;font-size:14px;font-weight:700;color:var(--price);background:var(--chip);border-radius:999px;padding:3px 12px}
-.car .notes{margin-top:8px;padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--text) 5%,transparent);font-size:13px;color:var(--muted)}
-.car .notes div+div{margin-top:4px}
-.modalWrap{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.55)}
-.modal{width:100%;max-width:420px;max-height:90vh;overflow-y:auto;background:var(--bg);border:1px solid color-mix(in srgb,var(--accent) 50%,var(--line));border-radius:16px;padding:16px}
-.modal h3{margin:0 0 8px;font-size:19px}
-.modal .info{font-size:14px;color:var(--muted);margin-bottom:12px}
-.modal .btns{display:flex;gap:8px;margin-top:6px}
-.modal .btns .btn{flex:1}
 .hidden{display:none!important}
 </style>
 </head>
@@ -146,28 +156,25 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
       <button class="burger hidden" id="burger" type="button" aria-label="القائمة" aria-controls="drawer" aria-expanded="false"><i></i><i></i><i></i></button>
       <div><h1>الأصدقاء</h1><div class="who hidden" id="who"></div></div>
     </div>
-    <button class="btn ghost hidden" id="switchUser" type="button">تغيير المستخدم</button>
+    <button class="btn ghost hidden" id="switchUser" type="button">تسجيل الخروج</button>
   </div>
 
   <div id="banner" class="banner hidden"></div>
 
-  <!-- اختيار الاسم ودخول المدير -->
+  <!-- تسجيل الدخول -->
   <div class="card hidden" id="pickCard">
-    <p class="pickTitle">اختر اسمك</p>
-    <div class="names" id="names"></div>
-    <button class="link" id="adminToggle" type="button">دخول المدير</button>
-    <div class="hidden" id="adminForm">
-      <div class="field">
-        <label for="aEmail">البريد الإلكتروني</label>
-        <input id="aEmail" class="ltr" type="email" autocomplete="username" placeholder="name@example.com">
-      </div>
-      <div class="field">
-        <label for="aPass">كلمة المرور</label>
-        <input id="aPass" class="ltr" type="password" autocomplete="current-password">
-      </div>
-      <button class="btn" id="aLogin" type="button">تسجيل الدخول</button>
-      <div class="msg" id="aMsg"></div>
+    <p class="pickTitle">تسجيل الدخول</p>
+    <div class="field">
+      <label for="aUser">الاسم</label>
+      <input id="aUser" type="text" autocomplete="username" autocapitalize="none" placeholder="اكتب اسمك">
     </div>
+    <div class="field">
+      <label for="aPass">كلمة المرور</label>
+      <input id="aPass" class="ltr" type="password" autocomplete="current-password">
+    </div>
+    <p class="msg">سيبقى دخولك محفوظًا على هذا الجهاز.</p>
+    <button class="btn" id="aLogin" type="button">دخول</button>
+    <div class="msg" id="aMsg"></div>
   </div>
 
   <!-- التطبيق -->
@@ -175,24 +182,24 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
     <div class="card" id="formCard">
       <div class="field">
         <label for="phone">رقم الزبون</label>
-        <input id="phone" class="ltr" type="tel" inputmode="tel" autocomplete="off" placeholder="09XXXXXXXX">
+        <input id="phone" class="ltr" type="text" autocomplete="off" placeholder="09XXXXXXXX">
       </div>
       <div class="field">
-        <label id="workLabel">نوع العمل</label>
-        <div class="seg" id="work" role="radiogroup" aria-labelledby="workLabel"></div>
+        <label>تصوير السيارة</label>
+        <div class="photoBtn" id="photoBox">
+          <span id="photoHint">📷 اضغط لالتقاط صورة</span>
+          <input id="photo" type="file" accept="image/*" capture="environment" aria-label="تصوير السيارة">
+        </div>
       </div>
       <div class="field">
         <label for="amount">السعر</label>
-        <input id="amount" class="ltr" type="text" inputmode="decimal" autocomplete="off" placeholder="مثال: 150">
+        <input id="amount" class="ltr" type="text" autocomplete="off" placeholder="مثال: 150">
       </div>
       <div class="field">
-        <label for="photo">تصوير السيارة</label>
-        <div class="photoBtn" id="photoBox">
-          <span id="photoHint">📷 اضغط لالتقاط صورة</span>
-          <input id="photo" type="file" accept="image/*" capture="environment">
-        </div>
+        <label>نوع العمل</label>
+        <div class="seg" id="seg"></div>
       </div>
-      <button class="btn" id="save" type="button">حفظ السيارة في السجل</button>
+      <button class="btn" id="save" type="button">حفظ في السجل</button>
       <div class="msg" id="msg"></div>
     </div>
 
@@ -200,15 +207,24 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
 
     <div class="stats">
       <div class="chip">داخل الورشة<b id="cnt">0</b></div>
-      <div class="chip">قيد العمل<b id="cntWork">0</b></div>
-      <div class="chip">جاهزة<b id="cntReady">0</b></div>
+      <div class="chip">إجمالي القيمة<b id="sumIn">0</b></div>
     </div>
 
-    <div class="filters" id="filters"></div>
     <div id="list"></div>
   </div>
 </div>
 
+<div class="modal hidden" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgT">
+  <div class="box">
+    <h3 id="dlgT">تأكيد التسليم</h3>
+    <div class="req">المبلغ المطلوب: <b id="dReq">0</b></div>
+    <div class="field"><label for="dPaid">المبلغ المدفوع</label><input id="dPaid" class="ltr" type="text" autocomplete="off"></div>
+    <div class="diff" id="dDiff"></div>
+    <div class="field hidden" id="dNoteBox"><label for="dNote">سبب التخفيض</label><input id="dNote" type="text" autocomplete="off" placeholder="اكتب السبب"></div>
+    <div class="msg" id="dMsg"></div>
+    <div class="mbtns"><button class="btn" id="dOk" type="button">تأكيد التسليم</button><button class="btn plain" id="dCancel" type="button">إلغاء</button></div>
+  </div>
+</div>
 <div class="veil" id="veil"></div>
 <aside class="drawer" id="drawer" aria-label="القائمة" aria-hidden="true">
   <div class="dhead">
@@ -218,10 +234,37 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
   </div>
   <div class="menu" id="menu">
     <button class="mitem" id="goRecords" type="button"><span>📋 السجل (المُسلَّمة)</span><em id="cntTab">0</em></button>
-    <button class="mitem" id="goPush" type="button"><span>🔔 الإشعارات</span><em id="pushState">…</em></button>
+    <button class="mitem" id="goNotif" type="button"><span>🔔 الإشعارات</span></button>
+    <button class="mitem hidden" id="goStaff" type="button"><span>👥 الموظفون</span></button>
+  </div>
+  <div class="rec hidden" id="notifView">
+    <div class="dlist">
+      <div class="card">
+        <p class="pickTitle">هذا الجهاز</p>
+        <div class="msg" id="pStatus"></div>
+        <button class="btn" id="pToggle" type="button">تفعيل الإشعارات</button>
+      </div>
+      <div class="card hidden" id="evCard">
+        <p class="pickTitle">الأحداث التي ترسل إشعارًا</p>
+        <div id="evList"></div>
+        <div class="msg" id="evMsg"></div>
+      </div>
+    </div>
+  </div>
+  <div class="rec hidden" id="staffView">
+    <div class="dlist">
+      <div class="card">
+        <p class="pickTitle">إنشاء حساب موظف</p>
+        <div class="field"><label for="sName">اسم الموظف</label><input id="sName" type="text" autocomplete="off"></div>
+        <div class="field"><label for="sPass">كلمة المرور (6 أحرف فأكثر)</label><input id="sPass" class="ltr" type="text" autocomplete="off"></div>
+        <button class="btn" id="sAdd" type="button">إنشاء الحساب</button>
+        <div class="msg" id="sMsg"></div>
+      </div>
+      <div id="sList"></div>
+    </div>
   </div>
   <div class="rec hidden" id="recView">
-    <div class="dsum">إجمالي القيمة: <b id="dtotal">0</b></div>
+    <div class="dsum hidden" id="dsum">إجمالي المدفوع: <b id="dtotal">0</b></div>
     <div class="dlist" id="dlist"></div>
   </div>
 </aside>
@@ -239,14 +282,13 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
 
   const STATUSES = ['قيد العمل', 'جاهزة', 'تم التسليم'];
   const DELIVERED = STATUSES[2];
-  const WORKERS = ['حسين', 'محمود', 'عبدو'];
   const normDigits = v => v.replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
   const $ = id => document.getElementById(id);
   const el = {
-    banner:$('banner'), pickCard:$('pickCard'), app:$('app'), switchUser:$('switchUser'), who:$('who'), names:$('names'),
-    phone:$('phone'), work:$('work'),
+    banner:$('banner'), pickCard:$('pickCard'), app:$('app'), switchUser:$('switchUser'), who:$('who'),
+    phone:$('phone'),
     amount:$('amount'), photo:$('photo'), photoBox:$('photoBox'), photoHint:$('photoHint'),
-    save:$('save'), msg:$('msg'), q:$('q'), list:$('list'), filters:$('filters')
+    save:$('save'), msg:$('msg'), q:$('q'), list:$('list')
   };
 
   function showBanner(t){ el.banner.textContent = t || ''; el.banner.classList.toggle('hidden', !t); }
@@ -258,10 +300,17 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     return;
   }
 
-  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const remember = true;
+  try { if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+  const authStore = {
+    getItem: k => { try { return localStorage.getItem(k) || sessionStorage.getItem(k); } catch(e){ return null; } },
+    setItem: (k, v) => { try { (remember ? localStorage : sessionStorage).setItem(k, v); (remember ? sessionStorage : localStorage).removeItem(k); } catch(e){} },
+    removeItem: k => { try { localStorage.removeItem(k); sessionStorage.removeItem(k); } catch(e){} }
+  };
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: authStore } });
+  const db2 = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'wrsha-staff-create' } });
 
   let allCars = [];
-  let statusFilter = 'الكل';
   let channel = null;
 
   function setMsg(node, t, cls){ node.textContent = t || ''; node.className = 'msg ' + (cls || ''); }
@@ -348,40 +397,14 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     }
   });
 
-  // ---------- نوع العمل ----------
-  const WORK_TYPES = ['سمكره', 'زواق', 'سمكره وزواق'];
-  let workType = '';
-  function setWork(v){
-    workType = v;
-    Array.prototype.forEach.call(el.work.children, b => {
-      const on = b.textContent === v;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-checked', on ? 'true' : 'false');
-    });
-  }
-  WORK_TYPES.forEach(w => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.textContent = w;
-    b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
-    b.addEventListener('click', () => setWork(w));
-    el.work.appendChild(b);
-  });
-
-  // ---------- أدوات ----------
-  const parseNum = v => {
-    const t = normDigits(v).replace(/[,٫،]/g, '.');
-    return /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+  // ---------- تسجيل الدخول بالاسم ----------
+  let worker = null, isAdmin = false, myId = null;
+  const toEmail = u => {
+    u = u.trim();
+    if(u.indexOf('@') > -1) return u.toLowerCase();
+    const hex = Array.prototype.map.call(new TextEncoder().encode(u.toLowerCase().replace(/\s+/g, '')), b => ('0' + b.toString(16)).slice(-2)).join('');
+    return 'u' + hex + '@wrsha.local';
   };
-  const fmt = n => String(Math.round(n * 100) / 100);
-  const today = () => new Date().toLocaleDateString('ar-EG');
-  const addNote = (old, line) => (old ? old + '\n' : '') + line;
-  const hasVal = v => v !== null && v !== undefined && v !== '';
-  function flash(t){ showBanner(t); setTimeout(() => showBanner(''), 5000); }
-
-  // ---------- اختيار الاسم ----------
-  let worker = null, isAdmin = false;
-  try { worker = localStorage.getItem('wrsha_worker'); } catch(e){}
-  if(worker && WORKERS.indexOf(worker) === -1) worker = null;
 
   function showWorker(){
     const on = !!worker;
@@ -390,65 +413,110 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     el.switchUser.classList.toggle('hidden', !on);
     el.who.classList.toggle('hidden', !on);
     $('burger').classList.toggle('hidden', !on);
-    el.who.textContent = on ? 'المستخدم: ' + worker : '';
-    if(on){ fetchCars(); subscribe(); syncPush(); } else { openDrawer(false); }
+    $('goStaff').classList.toggle('hidden', !isAdmin);
+    $('dsum').classList.toggle('hidden', !isAdmin);
+    el.who.textContent = on ? (isAdmin ? '👑 ' : '👤 ') + worker : '';
+    if(on){ fetchCars(); subscribe(); } else { openDrawer(false); }
   }
-  WORKERS.forEach(n => {
+
+  async function enter(user){
+    let prof = null, failed = false;
+    try {
+      const { data, error } = await db.from('profiles').select('username, role, active').eq('id', user.id).maybeSingle();
+      if(error) failed = true; else prof = data;
+    } catch(e){ failed = true; }
+    if(failed){
+      // مشكلة اتصال: لا نسجّل الخروج، نستعمل آخر بيانات محفوظة
+      try {
+        const c = JSON.parse(localStorage.getItem('wrsha_profile') || 'null');
+        if(c && c.id === user.id) prof = { username: c.username, role: c.role, active: true };
+      } catch(e){}
+      if(!prof) return 'تعذر التحقق من الحساب. تأكد من الاتصال بالإنترنت ثم أعد فتح التطبيق.';
+    } else if(!prof || prof.active === false){
+      await db.auth.signOut();
+      try { localStorage.removeItem('wrsha_profile'); } catch(e){}
+      return 'الحساب غير مفعّل أو غير مسجّل. تواصل مع المدير.';
+    } else {
+      try { localStorage.setItem('wrsha_profile', JSON.stringify({ id: user.id, username: prof.username, role: prof.role })); } catch(e){}
+    }
+    worker = prof.username; isAdmin = prof.role === 'admin'; myId = user.id;
+    showWorker();
+    return '';
+  }
+
+  try { $('aUser').value = localStorage.getItem('wrsha_user') || ''; } catch(e){}
+
+  $('aLogin').addEventListener('click', async () => {
+    const u = $('aUser').value.trim(), p = $('aPass').value;
+    if(!u || !p){ setMsg($('aMsg'), 'أدخل الاسم وكلمة المرور', 'err'); return; }
+    try { localStorage.setItem('wrsha_user', u); } catch(e){}
+    $('aLogin').disabled = true; setMsg($('aMsg'), 'جارٍ الدخول…');
+    const { data, error } = await db.auth.signInWithPassword({ email: toEmail(u), password: p });
+    if(error){ $('aLogin').disabled = false; setMsg($('aMsg'), 'الاسم أو كلمة المرور غير صحيحة', 'err'); return; }
+    const msg = await enter(data.user);
+    $('aLogin').disabled = false;
+    $('aPass').value = '';
+    setMsg($('aMsg'), msg, msg ? 'err' : '');
+  });
+  $('aPass').addEventListener('keydown', e => { if(e.key === 'Enter') $('aLogin').click(); });
+
+  el.switchUser.addEventListener('click', async () => {
+    if(!confirm('تسجيل الخروج من هذا الجهاز؟ ستحتاج إلى إدخال الاسم وكلمة المرور مرة أخرى.')) return;
+    try { localStorage.removeItem('wrsha_profile'); } catch(e){}
+    await db.auth.signOut();
+    worker = null; isAdmin = false; allCars = [];
+    showWorker();
+  });
+
+  db.auth.getSession().then(async ({ data }) => {
+    if(data.session){
+      const msg = await enter(data.session.user);
+      if(msg){ setMsg($('aMsg'), msg, 'err'); showWorker(); }
+    } else { showWorker(); }
+  });
+
+  const SERVICES = ['سمكره', 'زواق', 'سمكره وزواق'];
+  let service = '';
+  SERVICES.forEach(n => {
     const b = document.createElement('button');
     b.type = 'button'; b.textContent = n;
     b.addEventListener('click', () => {
-      worker = n;
-      try { localStorage.setItem('wrsha_worker', n); } catch(e){}
-      showWorker();
+      service = n;
+      Array.prototype.forEach.call($('seg').children, x => x.classList.toggle('on', x === b));
     });
-    el.names.appendChild(b);
+    $('seg').appendChild(b);
   });
-  $('adminToggle').addEventListener('click', () => $('adminForm').classList.toggle('hidden'));
-  $('aLogin').addEventListener('click', async () => {
-    const email = $('aEmail').value.trim(), password = $('aPass').value;
-    if(!email || !password){ setMsg($('aMsg'), 'أدخل البريد وكلمة المرور', 'err'); return; }
-    $('aLogin').disabled = true; setMsg($('aMsg'), 'جارٍ الدخول…');
-    const { error } = await db.auth.signInWithPassword({ email, password });
-    $('aLogin').disabled = false;
-    if(error){ setMsg($('aMsg'), 'البريد أو كلمة المرور غير صحيحة', 'err'); return; }
-    $('aPass').value = ''; setMsg($('aMsg'), '');
-    isAdmin = true; worker = 'المدير'; showWorker();
-  });
-  $('aPass').addEventListener('keydown', e => { if(e.key === 'Enter') $('aLogin').click(); });
-  el.switchUser.addEventListener('click', () => {
-    if(isAdmin){ db.auth.signOut(); isAdmin = false; }
-    worker = null;
-    try { localStorage.removeItem('wrsha_worker'); } catch(e){}
-    showWorker();
-  });
-  db.auth.getSession().then(({ data }) => {
-    if(data.session){ isAdmin = true; worker = 'المدير'; }
-    showWorker();
-  });
+
+  const num = v => Number(v) || 0;
+  const fmt = n => String(Math.round(num(n) * 100) / 100);
+  const extrasOf = r => Array.isArray(r.extras) ? r.extras : [];
+  const totalOf = r => num(r.amount) + extrasOf(r).reduce((t, x) => t + num(x.amount), 0);
+  const cleanAmt = v => normDigits(v.trim()).replace(/[,٫،]/g, '.');
 
   el.save.addEventListener('click', async () => {
     const customer_phone = normDigits(el.phone.value.trim());
-    const amount = parseNum(el.amount.value.trim());
-
+    const amountRaw = cleanAmt(el.amount.value);
     if(!customer_phone){ setMsg(el.msg, 'يرجى إدخال رقم الزبون', 'err'); el.phone.focus(); return; }
-    if(!validPhone(customer_phone)){ setMsg(el.msg, 'رقم الهاتف غير صحيح (أرقام فقط، من 7 إلى 15 رقماً)', 'err'); el.phone.focus(); return; }
-    if(!workType){ setMsg(el.msg, 'اختر نوع العمل', 'err'); return; }
-    if(isNaN(amount)){ setMsg(el.msg, 'أدخل السعر (أرقام فقط)', 'err'); el.amount.focus(); return; }
+    if(!validPhone(customer_phone)){ setMsg(el.msg, 'رقم الزبون غير صحيح (أرقام فقط، من 7 إلى 15 رقماً)', 'err'); el.phone.focus(); return; }
+    if(amountRaw === '' || !(Number(amountRaw) >= 0)){ setMsg(el.msg, 'أدخل السعر بالأرقام', 'err'); el.amount.focus(); return; }
+    if(!service){ setMsg(el.msg, 'اختر نوع العمل', 'err'); return; }
 
     el.save.disabled = true;
     setMsg(el.msg, 'جارٍ الحفظ…');
     try {
-      const row = { car_number: '', model: '', customer_phone, issue_description: workType, amount, photo: photoData || null, status: STATUSES[0], added_by: worker };
+      const row = { car_number: customer_phone, model: '', customer_phone, issue_description: '', service,
+        amount: Number(amountRaw), photo: photoData || null, extras: [], status: STATUSES[0], added_by: worker };
       let { error } = await db.from('cars').insert([row]);
       if(error && /added_by/.test(error.message || '')){
         delete row.added_by;
         ({ error } = await db.from('cars').insert([row]));
       }
       if(error) throw error;
-      setMsg(el.msg, 'تم حفظ السيارة بنجاح ✓', 'ok');
+      setMsg(el.msg, 'تم الحفظ بنجاح ✓', 'ok');
       el.phone.value = el.amount.value = '';
-      setWork('');
       resetPhoto();
+      service = '';
+      Array.prototype.forEach.call($('seg').children, x => x.classList.remove('on'));
       fetchCars();
       setTimeout(() => setMsg(el.msg, ''), 2500);
     } catch(e){
@@ -458,141 +526,66 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     }
   });
 
-  // يعدّل السجل فوراً ثم يحفظه؛ يرجع نص الخطأ أو '' عند النجاح
-  async function patchCar(car, patch){
+  function flash(t){ showBanner(t); setTimeout(() => showBanner(''), 5000); }
+
+  async function patch(car, fields){
     const old = {};
-    Object.keys(patch).forEach(k => { old[k] = car[k]; });
-    Object.assign(car, patch);
+    Object.keys(fields).forEach(k => { old[k] = car[k]; });
+    Object.assign(car, fields);
     render();
-    const { error } = await db.from('cars').update(patch).eq('id', car.id);
-    if(error){
-      Object.assign(car, old);
-      render();
-      const m = error.message || '';
-      return /notes|paid/.test(m) ? 'يلزم إضافة العمودين notes و paid في Supabase أولاً' : (m || 'حاول مرة أخرى');
-    }
-    return '';
-  }
-
-  // ---------- نافذة تأكيد ----------
-  function openModal(cfg){
-    const wrap = document.createElement('div');
-    wrap.className = 'modalWrap';
-    const box = document.createElement('div');
-    box.className = 'modal';
-    box.setAttribute('role', 'dialog');
-    box.setAttribute('aria-modal', 'true');
-    const h = document.createElement('h3'); h.textContent = cfg.title; box.appendChild(h);
-    if(cfg.info){ const i = document.createElement('div'); i.className = 'info'; i.textContent = cfg.info; box.appendChild(i); }
-    const inputs = {};
-    cfg.fields.forEach(f => {
-      const fd = document.createElement('div'); fd.className = 'field';
-      const lb = document.createElement('label'); lb.textContent = f.label; lb.htmlFor = 'm_' + f.key;
-      const inp = document.createElement('input');
-      inp.type = 'text'; inp.id = 'm_' + f.key; inp.autocomplete = 'off';
-      if(f.num){ inp.className = 'ltr'; inp.inputMode = 'decimal'; }
-      inp.placeholder = f.placeholder || ''; inp.value = f.value || '';
-      inputs[f.key] = inp;
-      fd.appendChild(lb); fd.appendChild(inp); box.appendChild(fd);
-    });
-    const msg = document.createElement('div'); msg.className = 'msg'; box.appendChild(msg);
-    const btns = document.createElement('div'); btns.className = 'btns';
-    const okB = document.createElement('button'); okB.type = 'button'; okB.className = 'btn'; okB.textContent = cfg.ok;
-    const noB = document.createElement('button'); noB.type = 'button'; noB.className = 'btn plain'; noB.textContent = 'إلغاء';
-    btns.appendChild(okB); btns.appendChild(noB); box.appendChild(btns);
-    wrap.appendChild(box);
-    const onKey = e => { if(e.key === 'Escape') close(); };
-    function close(){ wrap.remove(); document.removeEventListener('keydown', onKey); }
-    document.addEventListener('keydown', onKey);
-    noB.addEventListener('click', close);
-    wrap.addEventListener('click', e => { if(e.target === wrap) close(); });
-    okB.addEventListener('click', async () => {
-      const vals = {};
-      Object.keys(inputs).forEach(k => { vals[k] = inputs[k].value.trim(); });
-      okB.disabled = true; setMsg(msg, 'جارٍ الحفظ…');
-      const err = await cfg.onConfirm(vals);
-      if(err){ setMsg(msg, err, 'err'); okB.disabled = false; return; }
-      close();
-    });
-    document.body.appendChild(wrap);
-    const first = box.querySelector('input'); if(first) first.focus();
-  }
-
-  // زيادة السعر مع ملاحظة
-  function openIncrease(r){
-    const cur = Number(r.amount) || 0;
-    openModal({
-      title: 'زيادة السعر',
-      info: 'السعر الحالي: ' + fmt(cur),
-      fields: [
-        { key: 'add', label: 'مقدار الزيادة', num: true, placeholder: 'مثال: 50' },
-        { key: 'note', label: 'ملاحظة (سبب الزيادة)', placeholder: 'اكتب سبب الزيادة' }
-      ],
-      ok: 'حفظ الزيادة',
-      onConfirm: async v => {
-        const add = parseNum(v.add);
-        if(!(add > 0)) return 'أدخل مقدار زيادة صحيحاً';
-        if(!v.note) return 'اكتب ملاحظة توضح سبب الزيادة';
-        const total = Math.round((cur + add) * 100) / 100;
-        const line = '➕ زيادة ' + fmt(add) + ' (الإجمالي ' + fmt(total) + '): ' + v.note + ' — ' + (worker || '') + ' — ' + today();
-        return await patchCar(r, { amount: total, notes: addNote(r.notes, line) });
-      }
-    });
-  }
-
-  // تأكيد التسليم مع إمكانية تقليل المبلغ
-  function openDeliver(r){
-    const known = hasVal(r.amount);
-    const due = known ? Number(r.amount) : 0;
-    openModal({
-      title: 'تأكيد التسليم',
-      info: (known ? 'السعر المطلوب: ' + fmt(due) + '. ' : '') + 'أكّد المبلغ المدفوع، ويمكنك تقليله عند الحاجة.',
-      fields: [
-        { key: 'paid', label: 'المبلغ المدفوع', num: true, value: known ? fmt(due) : '' },
-        { key: 'note', label: 'ملاحظة (اختياري)' }
-      ],
-      ok: 'تأكيد التسليم',
-      onConfirm: async v => {
-        const paid = parseNum(v.paid);
-        if(isNaN(paid)) return 'أدخل المبلغ المدفوع';
-        if(known && paid > due) return 'المبلغ المدفوع أكبر من السعر. لزيادة السعر استخدم زر زيادة السعر.';
-        const who = ' — ' + (worker || '') + ' — ' + today();
-        let notes = r.notes;
-        if(known && paid < due) notes = addNote(notes, '➖ تخفيض عند التسليم من ' + fmt(due) + ' إلى ' + fmt(paid) + (v.note ? ': ' + v.note : '') + who);
-        else if(v.note) notes = addNote(notes, '📝 ' + v.note + who);
-        return await patchCar(r, { status: DELIVERED, paid, amount: paid, notes: notes || null });
-      }
-    });
+    const { error } = await db.from('cars').update(fields).eq('id', car.id);
+    if(error){ Object.assign(car, old); render(); flash('تعذر الحفظ: ' + (error.message || 'حاول مرة أخرى')); return false; }
+    return true;
   }
 
   async function deleteCar(car){
-    if(!confirm('حذف السيارة ' + car.car_number + ' من السجل؟ لا يمكن التراجع.')) return;
+    if(!confirm('حذف سجل الزبون ' + car.customer_phone + ' نهائيًا؟ لا يمكن التراجع.')) return;
     const { error } = await db.from('cars').delete().eq('id', car.id);
-    if(error){ showBanner('تعذر الحذف: ' + (error.message || '')); setTimeout(() => showBanner(''), 4000); return; }
+    if(error){ flash('تعذر الحذف: ' + (error.message || '')); return; }
     allCars = allCars.filter(c => c.id !== car.id);
     render();
   }
 
+  // ---------- تأكيد التسليم ----------
+  let dlgCar = null;
+  function updDiff(){
+    const paid = cleanAmt($('dPaid').value), req = totalOf(dlgCar);
+    const d = $('dDiff');
+    if(paid === '' || !(Number(paid) >= 0)){ d.textContent = ''; d.className = 'diff'; $('dNoteBox').classList.add('hidden'); return; }
+    const diff = Number(paid) - req;
+    d.textContent = diff < 0 ? 'تخفيض: ' + fmt(-diff) : diff > 0 ? 'زيادة عن المطلوب: ' + fmt(diff) : '';
+    d.className = 'diff' + (diff < 0 ? ' neg' : '');
+    $('dNoteBox').classList.toggle('hidden', !(diff < 0));
+  }
+  function openDeliver(car){
+    dlgCar = car;
+    $('dReq').textContent = fmt(totalOf(car));
+    $('dPaid').value = fmt(totalOf(car));
+    $('dNote').value = ''; setMsg($('dMsg'), '');
+    updDiff();
+    $('dlg').classList.remove('hidden');
+    $('dPaid').focus();
+  }
+  function closeDeliver(){ $('dlg').classList.add('hidden'); dlgCar = null; }
+  $('dPaid').addEventListener('input', updDiff);
+  $('dCancel').addEventListener('click', closeDeliver);
+  $('dOk').addEventListener('click', async () => {
+    const raw = cleanAmt($('dPaid').value);
+    if(raw === '' || !(Number(raw) >= 0)){ setMsg($('dMsg'), 'أدخل المبلغ المدفوع', 'err'); return; }
+    const paid = Number(raw), car = dlgCar;
+    const note = $('dNote').value.trim();
+    if(paid < totalOf(car) && !note){ setMsg($('dMsg'), 'اكتب سبب التخفيض', 'err'); $('dNote').focus(); return; }
+    closeDeliver();
+    await patch(car, { status: DELIVERED, paid, discount_note: paid < totalOf(car) ? note : null });
+  });
+
   // ---------- العرض ----------
   el.q.addEventListener('input', render);
-
-  function renderFilters(){
-    el.filters.textContent = '';
-    ['الكل', STATUSES[0], STATUSES[1]].forEach(s => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = s;
-      if(s === statusFilter) b.className = 'on';
-      b.addEventListener('click', () => { statusFilter = s; render(); });
-      el.filters.appendChild(b);
-    });
-  }
 
   function renderStats(){
     const inside = allCars.filter(c => c.status !== DELIVERED);
     $('cnt').textContent = inside.length;
-    $('cntWork').textContent = inside.filter(c => (c.status || STATUSES[0]) === STATUSES[0]).length;
-    $('cntReady').textContent = inside.filter(c => c.status === STATUSES[1]).length;
+    $('sumIn').textContent = fmt(inside.reduce((t, c) => t + totalOf(c), 0));
     renderRecords();
   }
 
@@ -605,133 +598,104 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     d.appendChild(document.createTextNode(value));
     return d;
   }
+  function mk(t, cls, fn){ const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + cls; b.textContent = t; b.addEventListener('click', fn); return b; }
 
   function render(){
-    const q = el.q.value.trim().toLowerCase();
-    const filtered = allCars.filter(r => {
-      const st = r.status || STATUSES[0];
-      if(st === DELIVERED) return false;
-      if(statusFilter !== 'الكل' && st !== statusFilter) return false;
-      return !q ||
-        String(r.car_number || '').toLowerCase().includes(q) ||
-        String(r.customer_phone || '').toLowerCase().includes(q) ||
-        String(r.model || '').toLowerCase().includes(q);
-    });
-
+    const q = normDigits(el.q.value.trim()).toLowerCase();
+    const filtered = allCars.filter(r => r.status !== DELIVERED &&
+      (!q || String(r.customer_phone || '').toLowerCase().includes(q) || String(r.service || '').includes(q)));
     renderStats();
-    renderFilters();
     el.list.textContent = '';
-
     if(!filtered.length){
       const d = document.createElement('div');
       d.className = 'empty';
-      d.textContent = (q || statusFilter !== 'الكل') ? 'لا توجد نتائج مطابقة' : 'لا توجد سيارات مسجلة. أضف أول سيارة من النموذج أعلاه.';
+      d.textContent = q ? 'لا توجد نتائج مطابقة' : 'لا توجد سيارات في الورشة. أضف أول سيارة من النموذج أعلاه.';
       el.list.appendChild(d);
       return;
     }
-
     filtered.forEach(r => el.list.appendChild(buildCard(r, false)));
   }
 
   function buildCard(r, delivered){
-      const card = document.createElement('div');
-      card.className = 'card car';
+    const card = document.createElement('div');
+    card.className = 'card car';
 
-      if(r.photo){
-        const shot = document.createElement('img');
-        shot.className = 'shot';
-        shot.src = r.photo;
-        shot.alt = 'صورة السيارة';
-        shot.loading = 'lazy';
-        card.appendChild(shot);
-      }
+    if(r.photo){
+      const shot = document.createElement('img');
+      shot.className = 'shot'; shot.src = r.photo; shot.alt = 'صورة السيارة'; shot.loading = 'lazy';
+      card.appendChild(shot);
+    }
+    const plate = document.createElement('div');
+    plate.className = 'plate';
+    plate.textContent = '👤 ' + r.customer_phone;
+    card.appendChild(plate);
 
-      const plate = document.createElement('div');
-      plate.className = 'plate';
-      plate.textContent = '📱 ' + r.customer_phone;
-      card.appendChild(plate);
+    const sv = document.createElement('div'); sv.className = 'row';
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = r.service || 'غير محدد';
+    sv.appendChild(tag); card.appendChild(sv);
 
-      if(r.issue_description){
-        const w = document.createElement('div');
-        w.className = 'work';
-        w.textContent = '🔧 ' + r.issue_description;
-        card.appendChild(w);
-      }
-      if(r.car_number) card.appendChild(line('رقم السيارة', r.car_number));
-      if(r.model) card.appendChild(line('الموديل', r.model));
-      if(hasVal(r.amount)){
-        const av = line('السعر', fmt(Number(r.amount)));
-        av.classList.add('amount');
-        card.appendChild(av);
-      }
-      if(delivered && hasVal(r.paid)){
-        const pv = line('المدفوع', fmt(Number(r.paid)));
-        pv.classList.add('amount');
-        card.appendChild(pv);
-      }
-      if(r.notes){
-        const nb = document.createElement('div');
-        nb.className = 'notes';
-        String(r.notes).split('\n').filter(Boolean).forEach(t => {
-          const d = document.createElement('div'); d.textContent = t; nb.appendChild(d);
-        });
-        card.appendChild(nb);
-      }
+    card.appendChild(line('السعر', fmt(r.amount)));
+    extrasOf(r).forEach(x => {
+      const e = document.createElement('div');
+      e.className = 'extra';
+      e.textContent = '+ ' + fmt(x.amount) + ' — ' + (x.note || '') + (x.by ? ' (' + x.by + ')' : '');
+      card.appendChild(e);
+    });
+    const tot = document.createElement('div'); tot.className = 'total';
+    tot.textContent = 'الإجمالي: ' + fmt(totalOf(r));
+    card.appendChild(tot);
 
-      const acts = document.createElement('div');
-      acts.className = 'acts';
-      const call = document.createElement('a');
-      call.href = telLink(r.customer_phone);
-      call.textContent = '📞 اتصال';
-      const wa = document.createElement('a');
-      wa.href = waLink(r.customer_phone);
-      wa.target = '_blank';
-      wa.rel = 'noopener noreferrer';
-      wa.textContent = '💬 واتساب';
-      acts.appendChild(call);
-      acts.appendChild(wa);
-      card.appendChild(acts);
-
-      const mk = (t, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small ' + cls; b.textContent = t; b.addEventListener('click', fn); return b; };
-      const del = mk('حذف', 'danger', () => deleteCar(r));
-      const foot = document.createElement('div');
-      foot.className = 'foot';
-      if(delivered){
-        foot.appendChild(mk('↩ إرجاع للورشة', 'plain', async () => {
-          const e = await patchCar(r, { status: STATUSES[0], paid: null });
-          if(e) flash('تعذر التحديث: ' + e);
-        }));
-        if(isAdmin) foot.appendChild(del);
-      } else {
-        acts.appendChild(mk('➕ زيادة السعر', 'plain', () => openIncrease(r)));
-        const sel = document.createElement('select');
-        sel.setAttribute('aria-label', 'حالة السيارة');
-        STATUSES.slice(0, 2).forEach(s => {
-          const o = document.createElement('option');
-          o.value = s; o.textContent = s;
-          sel.appendChild(o);
-        });
-        sel.value = r.status || STATUSES[0];
-        sel.addEventListener('change', async () => {
-          const old = r.status;
-          const e = await patchCar(r, { status: sel.value });
-          if(e){ sel.value = old; flash('تعذر تحديث الحالة: ' + e); }
-        });
-        foot.appendChild(sel);
-        foot.appendChild(mk('✅ تسليم', 'done', () => openDeliver(r)));
-        if(isAdmin) foot.appendChild(del);
+    if(delivered){
+      card.appendChild(line('المدفوع', fmt(r.paid !== null && r.paid !== undefined ? r.paid : totalOf(r))));
+      if(r.paid !== null && r.paid !== undefined && num(r.paid) < totalOf(r)){
+        card.appendChild(line('تخفيض', fmt(totalOf(r) - num(r.paid)) + (r.discount_note ? ' — ' + r.discount_note : '')));
       }
+    }
+
+    const acts = document.createElement('div');
+    acts.className = 'acts';
+    const call = document.createElement('a'); call.href = telLink(r.customer_phone); call.textContent = '📞 اتصال';
+    const wa = document.createElement('a'); wa.href = waLink(r.customer_phone); wa.target = '_blank'; wa.rel = 'noopener noreferrer'; wa.textContent = '💬 واتساب';
+    acts.appendChild(call); acts.appendChild(wa);
+    card.appendChild(acts);
+
+    const foot = document.createElement('div');
+    foot.className = 'foot';
+    if(delivered){
+      foot.appendChild(mk('↩ إرجاع للورشة', 'plain', () => patch(r, { status: STATUSES[0], paid: null, discount_note: null })));
+    } else {
+      const form = document.createElement('div');
+      form.className = 'xform hidden';
+      form.innerHTML = '<div class="field"><label>مبلغ الزيادة</label><input class="ltr xa" type="text" autocomplete="off"></div>' +
+        '<div class="field"><label>الملاحظة</label><input class="xn" type="text" autocomplete="off" placeholder="سبب الزيادة"></div>' +
+        '<div class="msg xm"></div>';
+      const ok = mk('حفظ الزيادة', 'done', async () => {
+        const a = cleanAmt(form.querySelector('.xa').value), n = form.querySelector('.xn').value.trim();
+        const m = form.querySelector('.xm');
+        if(a === '' || !(Number(a) > 0)){ setMsg(m, 'أدخل مبلغ الزيادة', 'err'); return; }
+        if(!n){ setMsg(m, 'اكتب ملاحظة', 'err'); return; }
+        await patch(r, { extras: extrasOf(r).concat([{ amount: Number(a), note: n, by: worker, at: new Date().toISOString() }]) });
+      });
+      form.appendChild(ok);
+      foot.appendChild(mk('➕ زيادة القيمة', 'plain', () => form.classList.toggle('hidden')));
+      foot.appendChild(mk('✅ تسليم', 'done', () => openDeliver(r)));
       card.appendChild(foot);
+      card.appendChild(form);
+    }
+    if(delivered) card.appendChild(foot);
+    if(isAdmin){
+      const del = mk('حذف', 'danger', () => deleteCar(r));
+      (delivered ? foot : foot).appendChild(del);
+    }
 
-      if(r.added_by){ const ab = document.createElement('div'); ab.className = 'date'; ab.textContent = 'أضافها: ' + r.added_by; card.appendChild(ab); }
-      if(r.created_at){
-        const dt = document.createElement('div');
-        dt.className = 'date';
-        dt.textContent = new Date(r.created_at).toLocaleString('ar-EG');
-        card.appendChild(dt);
-      }
-
-      return card;
+    if(r.added_by){ const ab = document.createElement('div'); ab.className = 'date'; ab.textContent = 'أضافها: ' + r.added_by; card.appendChild(ab); }
+    if(r.created_at){
+      const dt = document.createElement('div');
+      dt.className = 'date';
+      dt.textContent = new Date(r.created_at).toLocaleString('ar-EG');
+      card.appendChild(dt);
+    }
+    return card;
   }
 
   function renderRecords(){
@@ -742,65 +706,132 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       const d = document.createElement('div'); d.className = 'empty'; d.textContent = 'لم يتم تسليم أي سيارة بعد.'; box.appendChild(d);
     }
     done.forEach(r => box.appendChild(buildCard(r, true)));
-    const total = done.reduce((t, c) => t + (Number(hasVal(c.paid) ? c.paid : c.amount) || 0), 0);
-    $('dtotal').textContent = Math.round(total * 100) / 100;
+    $('dsum').classList.toggle('hidden', !isAdmin);
+    $('dtotal').textContent = fmt(done.reduce((t, c) => t + (c.paid !== null && c.paid !== undefined ? num(c.paid) : totalOf(c)), 0));
     $('cntTab').textContent = done.length;
   }
 
-  // ---------- إشعارات السيارات الجديدة (Web Push) ----------
-  const VAPID_PUBLIC_KEY = 'BDnPuWQliT2ND9Mu7QiIPucdxg_DgynOiDVAJNlhIO1OWJnKkDnNqN40Mu_H_7UzRhlIRk4ZYLyV0jZKuO1lmXA';
-  const pushOk = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
-  function b64ToU8(b){
-    const s = (b + '='.repeat((4 - b.length % 4) % 4)).replace(/-/g, '+').replace(/_/g, '/');
-    const r = atob(s);
-    return Uint8Array.from(r, c => c.charCodeAt(0));
-  }
-  function setPushLabel(){
-    const e = $('pushState');
-    if(!pushOk){ e.textContent = 'غير مدعوم'; return; }
-    e.textContent = Notification.permission === 'granted' ? 'مفعّلة' : (Notification.permission === 'denied' ? 'محظورة' : 'غير مفعّلة');
-  }
-  async function savePush(sub){
-    const j = sub.toJSON();
-    const { error } = await db.from('push_subs').upsert(
-      { endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, worker: worker || null },
-      { onConflict: 'endpoint' });
-    return error;
-  }
-  async function enablePush(){
-    if(!pushOk){ flash('هذا المتصفح لا يدعم الإشعارات. افتح التطبيق من Chrome.'); return; }
-    const perm = await Notification.requestPermission();
-    setPushLabel();
-    if(perm !== 'granted'){ flash('لم يتم السماح بالإشعارات من إعدادات الجوال'); return; }
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      let sub = await reg.pushManager.getSubscription();
-      if(!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC_KEY) });
-      const err = await savePush(sub);
-      flash(err ? 'تعذر حفظ الاشتراك: ' + err.message : 'تم تفعيل الإشعارات ✓');
-    } catch(e){
-      flash('تعذر التفعيل: ' + (e.message || ''));
-    }
-  }
-  // يحدّث اسم المستخدم المرتبط بهذا الجهاز عند تغيير المستخدم
-  async function syncPush(){
-    if(!pushOk || Notification.permission !== 'granted') return;
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if(sub) await savePush(sub);
-    } catch(e){}
-  }
-  setPushLabel();
-  $('goPush').addEventListener('click', () => { openDrawer(false); enablePush(); });
-
   // ---------- القائمة الجانبية ----------
+  async function loadStaff(){
+    const box = $('sList'); box.textContent = '';
+    const { data, error } = await db.from('profiles').select('id, username, role, active, notify').order('created_at');
+    if(error){ box.textContent = 'تعذر تحميل الموظفين'; return; }
+    data.forEach(p => {
+      const c = document.createElement('div'); c.className = 'card';
+      const t = document.createElement('div'); t.className = 'plate';
+      t.textContent = (p.role === 'admin' ? '👑 ' : '👤 ') + p.username + (p.active ? '' : ' (موقوف)');
+      c.appendChild(t);
+      c.appendChild(mk(p.notify ? '🔔 يستلم الإشعارات' : '🔕 لا يستلم الإشعارات', p.notify ? 'done' : 'plain', async () => {
+        const r = await db.from('profiles').update({ notify: !p.notify }).eq('id', p.id);
+        if(r.error) flash('تعذر التحديث');
+        loadStaff();
+      }));
+      if(p.role !== 'admin'){
+        c.appendChild(mk(p.active ? 'إيقاف الحساب' : 'تفعيل الحساب', p.active ? 'danger' : 'done', async () => {
+          const r = await db.from('profiles').update({ active: !p.active }).eq('id', p.id);
+          if(r.error) flash('تعذر التحديث');
+          loadStaff();
+        }));
+      }
+      box.appendChild(c);
+    });
+  }
+
+  $('sAdd').addEventListener('click', async () => {
+    const name = $('sName').value.trim().replace(/\s+/g, ' '), pass = $('sPass').value, m = $('sMsg');
+    if(!name || name.indexOf('@') > -1){ setMsg(m, 'اكتب اسم الموظف (بدون @)', 'err'); return; }
+    if(pass.length < 6){ setMsg(m, 'كلمة المرور 6 أحرف على الأقل', 'err'); return; }
+    $('sAdd').disabled = true; setMsg(m, 'جارٍ الإنشاء…');
+    try {
+      const { data, error } = await db2.auth.signUp({ email: toEmail(name), password: pass });
+      if(error) throw error;
+      if(!data.user) throw new Error('تعذر إنشاء المستخدم');
+      const r = await db.from('profiles').insert({ id: data.user.id, username: name, role: 'employee' });
+      if(r.error) throw r.error;
+      $('sName').value = ''; $('sPass').value = '';
+      setMsg(m, 'تم إنشاء الحساب ✓', 'ok');
+      loadStaff();
+    } catch(e){
+      const t = e.message || '';
+      setMsg(m, 'تعذر الإنشاء: ' + (/already|registered|duplicate/i.test(t) ? 'الاسم مستخدم من قبل' : t), 'err');
+    } finally { $('sAdd').disabled = false; }
+  });
+
+
+  // ---------- الإشعارات ----------
+  const VAPID_PUBLIC = 'BJvCELmJ_BSkj-PfgeO0JKEc6w3gi0zojR_uhNdlx6Xp-v78ooNuOCy-_gryqmk6Id4axMP0zdwvmndTlHeOnJU';
+  const EVENTS = [
+    ['car_added', 'إضافة سيارة'], ['extra_added', 'زيادة القيمة'], ['delivered', 'التسليم'],
+    ['returned', 'إرجاع سيارة للورشة'], ['car_deleted', 'حذف سجل'],
+    ['staff_created', 'إنشاء حساب موظف'], ['staff_status', 'إيقاف أو تفعيل حساب']
+  ];
+  const b64u = t => { const p = '='.repeat((4 - t.length % 4) % 4); return Uint8Array.from(atob((t + p).replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0)); };
+  const pushOk = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+
+  async function pushSub(){
+    if(!pushOk()) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  }
+  async function refreshPush(){
+    const st = $('pStatus'), btn = $('pToggle');
+    if(!pushOk()){ st.textContent = 'هذا الجهاز لا يدعم الإشعارات.'; btn.classList.add('hidden'); return; }
+    if(Notification.permission === 'denied'){ st.textContent = 'الإشعارات محظورة. فعّلها من إعدادات الجهاز للتطبيق.'; btn.classList.add('hidden'); return; }
+    btn.classList.remove('hidden');
+    const sub = await pushSub();
+    st.textContent = sub ? 'الإشعارات مفعّلة على هذا الجهاز ✓' : 'الإشعارات متوقفة على هذا الجهاز.';
+    btn.textContent = sub ? 'إيقاف الإشعارات على هذا الجهاز' : 'تفعيل الإشعارات';
+    btn.className = 'btn' + (sub ? ' plain' : '');
+  }
+  $('pToggle').addEventListener('click', async () => {
+    const st = $('pStatus');
+    try {
+      const sub = await pushSub();
+      if(sub){
+        await db.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        await sub.unsubscribe();
+      } else {
+        const perm = await Notification.requestPermission();
+        if(perm !== 'granted'){ setMsg(st, 'لم يتم السماح بالإشعارات', 'err'); return; }
+        const reg = await navigator.serviceWorker.ready;
+        const ns = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID_PUBLIC) });
+        const j = ns.toJSON();
+        const r = await db.from('push_subscriptions').upsert({ user_id: myId, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }, { onConflict: 'endpoint' });
+        if(r.error) throw r.error;
+      }
+    } catch(e){ setMsg(st, 'تعذر التنفيذ: ' + (e.message || ''), 'err'); return; }
+    refreshPush();
+  });
+
+  let evState = {};
+  async function loadEvents(){
+    $('evCard').classList.toggle('hidden', !isAdmin);
+    if(!isAdmin) return;
+    const { data } = await db.from('app_settings').select('value').eq('key', 'notify_events').maybeSingle();
+    evState = (data && data.value) || {};
+    const box = $('evList'); box.textContent = '';
+    EVENTS.forEach(([k, label]) => {
+      const row = document.createElement('label'); row.className = 'sw';
+      const sp = document.createElement('span'); sp.textContent = label;
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = evState[k] !== false;
+      cb.addEventListener('change', async () => {
+        evState[k] = cb.checked;
+        const r = await db.from('app_settings').upsert({ key: 'notify_events', value: evState });
+        setMsg($('evMsg'), r.error ? 'تعذر الحفظ' : 'تم الحفظ ✓', r.error ? 'err' : 'ok');
+      });
+      row.appendChild(sp); row.appendChild(cb); box.appendChild(row);
+    });
+  }
+
   function showView(name){
-    const rec = name === 'records';
-    $('menu').classList.toggle('hidden', rec);
-    $('recView').classList.toggle('hidden', !rec);
-    $('back').classList.toggle('hidden', !rec);
-    $('dtitle').textContent = rec ? 'السجل' : 'القائمة';
+    $('menu').classList.toggle('hidden', name !== 'menu');
+    $('recView').classList.toggle('hidden', name !== 'records');
+    $('staffView').classList.toggle('hidden', name !== 'staff');
+    $('notifView').classList.toggle('hidden', name !== 'notif');
+    $('back').classList.toggle('hidden', name === 'menu');
+    $('dtitle').textContent = name === 'records' ? 'السجل' : name === 'staff' ? 'الموظفون' : name === 'notif' ? 'الإشعارات' : 'القائمة';
+    if(name === 'staff') loadStaff();
+    if(name === 'notif'){ refreshPush(); loadEvents(); }
   }
   function openDrawer(on){
     if(on) showView('menu');
@@ -813,6 +844,8 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   $('close').addEventListener('click', () => openDrawer(false));
   $('veil').addEventListener('click', () => openDrawer(false));
   $('goRecords').addEventListener('click', () => showView('records'));
+  $('goStaff').addEventListener('click', () => showView('staff'));
+  $('goNotif').addEventListener('click', () => showView('notif'));
   $('back').addEventListener('click', () => showView('menu'));
   document.addEventListener('keydown', e => { if(e.key === 'Escape') openDrawer(false); });
 
