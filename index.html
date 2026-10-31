@@ -264,6 +264,7 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
         <p class="pickTitle">إنشاء حساب موظف</p>
         <div class="field"><label for="sName">اسم الموظف</label><input id="sName" type="text" autocomplete="off"></div>
         <div class="field"><label for="sPass">كلمة المرور (6 أحرف فأكثر)</label><input id="sPass" class="ltr" type="text" autocomplete="off"></div>
+        <label class="chk"><input type="checkbox" id="sRec"><span>السماح له بالاطلاع على السجل</span></label>
         <button class="btn" id="sAdd" type="button">إنشاء الحساب</button>
         <div class="msg" id="sMsg"></div>
       </div>
@@ -406,7 +407,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   });
 
   // ---------- تسجيل الدخول بالاسم ----------
-  let worker = null, isAdmin = false, myId = null;
+  let worker = null, isAdmin = false, myId = null, canRec = true;
   const toEmail = u => {
     u = u.trim();
     if(u.indexOf('@') > -1) return u.toLowerCase();
@@ -422,6 +423,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     el.who.classList.toggle('hidden', !on);
     $('burger').classList.toggle('hidden', !on);
     $('goStaff').classList.toggle('hidden', !isAdmin);
+    $('goRecords').classList.toggle('hidden', !canRec);
     $('dsum').classList.toggle('hidden', !isAdmin);
     el.who.textContent = on ? (isAdmin ? '👑 ' : '👤 ') + worker : '';
     if(on){ fetchCars(); subscribe(); } else { openDrawer(false); }
@@ -430,14 +432,14 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   async function enter(user){
     let prof = null, failed = false;
     try {
-      const { data, error } = await db.from('profiles').select('username, role, active').eq('id', user.id).maybeSingle();
+      const { data, error } = await db.from('profiles').select('username, role, active, can_view_records').eq('id', user.id).maybeSingle();
       if(error) failed = true; else prof = data;
     } catch(e){ failed = true; }
     if(failed){
       // مشكلة اتصال: لا نسجّل الخروج، نستعمل آخر بيانات محفوظة
       try {
         const c = JSON.parse(localStorage.getItem('wrsha_profile') || 'null');
-        if(c && c.id === user.id) prof = { username: c.username, role: c.role, active: true };
+        if(c && c.id === user.id) prof = { username: c.username, role: c.role, active: true, can_view_records: c.can_view_records };
       } catch(e){}
       if(!prof) return 'تعذر التحقق من الحساب. تأكد من الاتصال بالإنترنت ثم أعد فتح التطبيق.';
     } else if(!prof || prof.active === false){
@@ -445,9 +447,10 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       try { localStorage.removeItem('wrsha_profile'); } catch(e){}
       return 'الحساب غير مفعّل أو غير مسجّل. تواصل مع المدير.';
     } else {
-      try { localStorage.setItem('wrsha_profile', JSON.stringify({ id: user.id, username: prof.username, role: prof.role })); } catch(e){}
+      try { localStorage.setItem('wrsha_profile', JSON.stringify({ id: user.id, username: prof.username, role: prof.role, can_view_records: prof.can_view_records })); } catch(e){}
     }
     worker = prof.username; isAdmin = prof.role === 'admin'; myId = user.id;
+    canRec = isAdmin || prof.can_view_records !== false;
     showWorker();
     return '';
   }
@@ -781,7 +784,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   // ---------- القائمة الجانبية ----------
   async function loadStaff(){
     const box = $('sList'); box.textContent = '';
-    const { data, error } = await db.from('profiles').select('id, username, role, active, notify').order('created_at');
+    const { data, error } = await db.from('profiles').select('id, username, role, active, notify, can_view_records').order('created_at');
     if(error){ box.textContent = 'تعذر تحميل الموظفين'; return; }
     data.forEach(p => {
       const c = document.createElement('div'); c.className = 'card';
@@ -794,6 +797,12 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
         loadStaff();
       }));
       if(p.role !== 'admin'){
+        const okRec = p.can_view_records !== false;
+        c.appendChild(mk(okRec ? '📋 مسموح له بالسجل' : '🚫 ممنوع من السجل', okRec ? 'done' : 'plain', async () => {
+          const r = await db.from('profiles').update({ can_view_records: !okRec }).eq('id', p.id);
+          if(r.error) flash('تعذر التحديث');
+          loadStaff();
+        }));
         c.appendChild(mk(p.active ? 'إيقاف الحساب' : 'تفعيل الحساب', p.active ? 'danger' : 'done', async () => {
           const r = await db.from('profiles').update({ active: !p.active }).eq('id', p.id);
           if(r.error) flash('تعذر التحديث');
@@ -820,9 +829,9 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       const { data, error } = await db2.auth.signUp({ email: toEmail(name), password: pass });
       if(error) throw error;
       if(!data.user) throw new Error('تعذر إنشاء المستخدم');
-      const r = await db.from('profiles').insert({ id: data.user.id, username: name, role: 'employee' });
+      const r = await db.from('profiles').insert({ id: data.user.id, username: name, role: 'employee', can_view_records: $('sRec').checked });
       if(r.error) throw r.error;
-      $('sName').value = ''; $('sPass').value = '';
+      $('sName').value = ''; $('sPass').value = ''; $('sRec').checked = false;
       setMsg(m, 'تم إنشاء الحساب ✓', 'ok');
       loadStaff();
     } catch(e){
