@@ -243,6 +243,7 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
     <button class="mitem" id="goRecords" type="button"><span>📋 السجل (المُسلَّمة)</span><em id="cntTab">0</em></button>
     <button class="mitem" id="goNotif" type="button"><span>🔔 الإشعارات</span></button>
     <button class="mitem hidden" id="goStaff" type="button"><span>👥 الموظفون</span></button>
+    <button class="mitem hidden" id="goCode" type="button"><span>🧩 الكود المباشر</span></button>
     <button class="mitem" id="goShare" type="button"><span>📤 مشاركة البرنامج</span></button>
     <div class="msg" id="shareMsg"></div>
   </div>
@@ -271,6 +272,18 @@ input:focus,select:focus,button:focus-visible{border-color:var(--accent);outline
         <div class="msg" id="sMsg"></div>
       </div>
       <div id="sList"></div>
+    </div>
+  </div>
+  <div class="rec hidden" id="codeView">
+    <div class="dlist">
+      <div class="card">
+        <p class="pickTitle">الكود المباشر (JavaScript)</p>
+        <div class="field"><label for="cCode">الصق الكود هنا</label>
+          <textarea id="cCode" rows="12" spellcheck="false" autocapitalize="off" autocomplete="off" style="width:100%;box-sizing:border-box;direction:ltr;text-align:left;font-family:monospace;font-size:13px;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--text)"></textarea></div>
+        <button class="btn" id="cPub" type="button">نشر الكود للجميع</button>
+        <button class="btn danger" id="cOff" type="button" style="margin-top:8px">تعطيل الكود الحالي</button>
+        <div class="msg" id="cMsg"></div>
+      </div>
     </div>
   </div>
   <div class="rec hidden" id="recView">
@@ -410,6 +423,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
 
   // ---------- تسجيل الدخول بالاسم ----------
   let worker = null, isAdmin = false, myId = null, canRec = true;
+  window.WRSHA = { db: db, $: $, get user(){ return { name: worker, isAdmin: isAdmin, id: myId }; } };
   const toEmail = u => {
     u = u.trim();
     if(u.indexOf('@') > -1) return u.toLowerCase();
@@ -425,6 +439,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     el.who.classList.toggle('hidden', !on);
     $('burger').classList.toggle('hidden', !on);
     $('goStaff').classList.toggle('hidden', !isAdmin);
+    $('goCode').classList.toggle('hidden', !isAdmin);
     $('goRecords').classList.toggle('hidden', !canRec);
     $('dsum').classList.toggle('hidden', !isAdmin);
     el.who.textContent = on ? (isAdmin ? '👑 ' : '👤 ') + worker : '';
@@ -912,11 +927,38 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     $('recView').classList.toggle('hidden', name !== 'records');
     $('staffView').classList.toggle('hidden', name !== 'staff');
     $('notifView').classList.toggle('hidden', name !== 'notif');
+    $('codeView').classList.toggle('hidden', name !== 'code');
     $('back').classList.toggle('hidden', name === 'menu');
-    $('dtitle').textContent = name === 'records' ? 'السجل' : name === 'staff' ? 'الموظفون' : name === 'notif' ? 'الإشعارات' : 'القائمة';
+    $('dtitle').textContent = name === 'records' ? 'السجل' : name === 'staff' ? 'الموظفون' : name === 'notif' ? 'الإشعارات' : name === 'code' ? 'الكود المباشر' : 'القائمة';
     if(name === 'staff') loadStaff();
     if(name === 'notif'){ refreshPush(); loadEvents(); }
+    if(name === 'code') loadCode();
   }
+  // ---------- الكود المباشر (للمدير فقط) ----------
+  async function loadCode(){
+    setMsg($('cMsg'), '');
+    try {
+      const { data } = await db.from('app_code').select('id, code').order('id', { ascending: false }).limit(1);
+      $('cCode').value = (data && data[0] && data[0].code) || '';
+    } catch(e){}
+  }
+  async function pushCode(code, okText){
+    $('cPub').disabled = true; $('cOff').disabled = true;
+    const { error } = await db.from('app_code').insert({ code: code });
+    $('cPub').disabled = false; $('cOff').disabled = false;
+    if(error) setMsg($('cMsg'), 'فشل: ' + error.message, 'err');
+    else setMsg($('cMsg'), okText, 'ok');
+    return !error;
+  }
+  $('cPub').addEventListener('click', async () => {
+    const code = $('cCode').value;
+    if(!code.trim()){ setMsg($('cMsg'), 'اكتب الكود أولاً', 'err'); return; }
+    try { new Function('WRSHA', code); } catch(e){ setMsg($('cMsg'), 'خطأ في صياغة الكود: ' + e.message, 'err'); return; }
+    await pushCode(code, 'تم النشر ✔ يصل للجميع عند فتح التطبيق');
+  });
+  $('cOff').addEventListener('click', async () => {
+    if(await pushCode('', 'تم تعطيل الكود ✔')) $('cCode').value = '';
+  });
   function openDrawer(on){
     if(on) showView('menu');
     $('drawer').classList.toggle('on', on);
@@ -929,6 +971,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
   $('veil').addEventListener('click', () => openDrawer(false));
   $('goRecords').addEventListener('click', () => showView('records'));
   $('goStaff').addEventListener('click', () => showView('staff'));
+  $('goCode').addEventListener('click', () => showView('code'));
   $('goNotif').addEventListener('click', () => showView('notif'));
   $('back').addEventListener('click', () => showView('menu'));
   $('goShare').addEventListener('click', async () => {
@@ -1030,6 +1073,36 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
     }catch(e){}
   }
   if(document.readyState==='complete') run(); else window.addEventListener('load',run);
+})();
+</script>
+<script>
+/* ====== الكود المباشر: يجلب آخر كود منشور ويشغّله ====== */
+(function(){
+  var SB_URL='https://vtrdmjidwhzurgtndnjv.supabase.co', SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmRtamlkd2h6dXJndG5kbmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzOTIxNjUsImV4cCI6MjEwODk2ODE2NX0.NRLbGHxuxRJG_0YfgfATzYcC5-ZnkDIIm8PZeNgHyh4';
+  var CK='wrsha_live_code', SK='wrsha_live_state';
+  function get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+  function set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function exec(row){
+    if(!row || !row.code || !row.code.trim()) return;
+    var st; try{ st=JSON.parse(get(SK)||'null'); }catch(e){ st=null; }
+    var n=(st && st.id===row.id) ? st.n : 0;
+    if(n>=2) return; /* تعطّل التطبيق مرتين متتاليتين بهذا الكود: لا يُشغَّل حتى يُنشر كود جديد */
+    set(SK, JSON.stringify({id:row.id, n:n+1}));
+    try{ new Function('WRSHA', row.code)(window.WRSHA); }catch(e){ console.error('live code', e); }
+    setTimeout(function(){ set(SK, JSON.stringify({id:row.id, n:0})); }, 5000);
+  }
+  async function run(){
+    var row=null; try{ row=JSON.parse(get(CK)||'null'); }catch(e){}
+    if(window.supabase){
+      try{
+        var c=supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+        var r=await c.from('app_code').select('id, code').order('id',{ascending:false}).limit(1);
+        if(!r.error && r.data && r.data[0]){ row=r.data[0]; set(CK, JSON.stringify(row)); }
+      }catch(e){}
+    }
+    exec(row);
+  }
+  run();
 })();
 </script>
 </body>
