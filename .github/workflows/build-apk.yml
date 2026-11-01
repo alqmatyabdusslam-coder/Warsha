@@ -3,6 +3,9 @@ name: Build APK
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,16 +24,37 @@ jobs:
       - name: Prepare web files
         run: |
           mkdir -p /tmp/site
-          rsync -a --exclude='.git' --exclude='.github' --exclude='node_modules' ./ /tmp/site/
+          rsync -a --exclude='.git' --exclude='.github' --exclude='node_modules' --exclude='signing' --exclude='package.json' --exclude='package-lock.json' ./ /tmp/site/
           rm -rf www && mv /tmp/site www
 
       - name: Add Capacitor and Android
         run: |
-          npm init -y
-          npm i @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          npx cap init Warsha com.warsha.app --web-dir=www
+          npm install
+          npx cap init Warsha ضع_معرف_تطبيقك_هنا --web-dir www
           npx cap add android
           npx cap sync android
+
+      - name: Signing key
+        run: |
+          mkdir -p ~/.android
+          if [ -f signing/debug.keystore ]; then
+            cp signing/debug.keystore ~/.android/debug.keystore
+          else
+            keytool -genkey -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+            mkdir -p signing
+            cp ~/.android/debug.keystore signing/debug.keystore
+            git config user.name "github-actions"
+            git config user.email "actions@github.com"
+            git add signing/debug.keystore
+            git commit -m "add signing key"
+            git push
+          fi
+
+      - name: Version and permissions
+        run: |
+          VER=1.2.0
+          sed -i "s/versionCode [0-9]*/versionCode $((GITHUB_RUN_NUMBER + 100))/; s/versionName \"[^\"]*\"/versionName \"$VER\"/" android/app/build.gradle
+          sed -i 's|<application|<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>\n    <application|' android/app/src/main/AndroidManifest.xml
 
       - name: Build APK
         run: |
