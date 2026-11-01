@@ -35,6 +35,10 @@ jobs:
       - run: npx cap add android
       - run: npx cap sync android
 
+      - name: Add install permission
+        run: |
+          sed -i 's|<application|<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/><application|' android/app/src/main/AndroidManifest.xml
+
       - name: Install ImageMagick
         run: sudo apt-get update && sudo apt-get install -y imagemagick
 
