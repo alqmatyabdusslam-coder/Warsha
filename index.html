@@ -1040,7 +1040,7 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
 })();
 </script>
 <script>
-/* ====== فحص التحديثات + رقم النسخة ====== */
+/* ====== فحص التحديثات + رقم النسخة (تنزيل وتثبيت داخل التطبيق) ====== */
 (function(){
   var SB_URL='https://vtrdmjidwhzurgtndnjv.supabase.co', SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cmRtamlkd2h6dXJndG5kbmp2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMzOTIxNjUsImV4cCI6MjEwODk2ODE2NX0.NRLbGHxuxRJG_0YfgfATzYcC5-ZnkDIIm8PZeNgHyh4';
   function mk(tag, css, txt){ var e=document.createElement(tag); if(css) e.style.cssText=css; if(txt) e.textContent=txt; return e; }
@@ -1062,7 +1062,42 @@ if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.s
       box.appendChild(mk('div','font-size:18px;font-weight:700','تحديث جديد '+v.version_name));
       if(v.notes) box.appendChild(mk('div','color:var(--muted);margin:8px 0',v.notes));
       var go=mk('button','display:block;width:100%;margin-top:14px;padding:12px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-text);font-size:16px;font-weight:700','تحميل التحديث');
-      go.onclick=function(){ var B=plug('Browser'); if(B) B.open({url:v.apk_url}); else location.href=v.apk_url; };
+      go.onclick=async function(){
+        var FS=plug('Filesystem'), FO=plug('FileOpener');
+        if(!FS||!FO){ var B=plug('Browser'); if(B) B.open({url:v.apk_url}); else location.href=v.apk_url; return; }
+        if(!go._ui){
+          go._ui=1;
+          go._track=mk('div','height:12px;border-radius:8px;background:var(--line);overflow:hidden;margin-top:14px;display:none');
+          go._fill=mk('div','height:100%;width:0;background:var(--accent);transition:width .2s');
+          go._track.appendChild(go._fill);
+          go._pc=mk('div','font-weight:700;margin-top:6px;display:none','0%');
+          go._msg=mk('div','color:var(--muted);font-size:13px;margin-top:8px');
+          box.appendChild(go._track); box.appendChild(go._pc); box.appendChild(go._msg);
+        }
+        if(go._uri){
+          try{ await FO.open({filePath:go._uri,contentType:'application/vnd.android.package-archive',openWithDefault:true}); }
+          catch(e){ go._msg.textContent='اسمح بالتثبيت من الإعدادات ثم اضغط تثبيت مرة أخرى'; }
+          return;
+        }
+        Array.prototype.forEach.call(box.querySelectorAll('button'),function(b){ b.style.display='none'; });
+        go._track.style.display='block'; go._pc.style.display='block';
+        go._fill.style.width='0%'; go._pc.textContent='0%'; go._msg.textContent='جارٍ التنزيل…';
+        var h=null;
+        try{
+          h=await FS.addListener('progress',function(p){
+            if(p.contentLength){ var n=Math.round(p.bytes/p.contentLength*100); go._fill.style.width=n+'%'; go._pc.textContent=n+'%'; }
+          });
+          var name='warsha-'+v.version_name+'.apk';
+          await FS.downloadFile({url:v.apk_url,path:name,directory:'CACHE',progress:true});
+          var u=await FS.getUri({path:name,directory:'CACHE'});
+          go._uri=u.uri; go._fill.style.width='100%'; go._pc.textContent='100%';
+          go._msg.textContent='اكتمل التنزيل'; go.textContent='تثبيت التحديث';
+        }catch(e){
+          go._msg.textContent='تعذّر التنزيل، تحقق من الاتصال'; go.textContent='إعادة المحاولة';
+        }
+        try{ if(h) h.remove(); }catch(e){}
+        go.style.display='block';
+      };
       box.appendChild(go);
       if(!v.force){
         var later=mk('button','display:block;width:100%;margin-top:8px;padding:10px;border:0;background:none;color:var(--muted);font-size:14px','لاحقاً');
